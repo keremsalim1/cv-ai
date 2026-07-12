@@ -159,7 +159,7 @@ Geliştirme TDD ile ilerler (önce test, sonra kod).
 | Backend | FastAPI + Python 3.11 | AI/PDF ekosistemi en olgun |
 | AI | OpenAI GPT-4o + GPT-4o-mini | kullanıcı tercihi; maliyet için görev bazlı model seçimi |
 | PDF okuma | PyMuPDF | hızlı, güvenilir metin çıkarma |
-| PDF üretme | WeasyPrint | HTML→PDF, ATS şablonu için ideal |
+| PDF üretme | fpdf2 | saf Python; WeasyPrint'in GTK bağımlılığı Windows'ta sorunlu olduğu için değiştirildi |
 | İlan çekme | httpx + trafilatura | ana metin çıkarmada en iyi açık kaynak |
 | Auth/DB/Storage | Supabase | hazır altyapı, RLS, PostgreSQL standardı |
 | i18n | next-intl | TR/EN çift dil |

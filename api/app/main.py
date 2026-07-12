@@ -7,10 +7,12 @@ def health():
     return {"status": "ok"}
 
 
+from app.routers import ats as ats_router
 from app.routers import cv as cv_router
 from app.routers import job as job_router
 from app.routers import score as score_router
 
+app.include_router(ats_router.router)
 app.include_router(cv_router.router)
 app.include_router(job_router.router)
 app.include_router(score_router.router)

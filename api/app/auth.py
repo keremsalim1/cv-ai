@@ -18,7 +18,11 @@ def get_current_user(
             get_settings().supabase_jwt_secret,
             algorithms=["HS256"],
             audience="authenticated",
+            options={"require": ["exp", "sub"]},
         )
     except jwt.PyJWTError:
         raise HTTPException(status_code=401, detail="Invalid token")
-    return payload["sub"]
+    sub = payload["sub"]
+    if not isinstance(sub, str) or not sub:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    return sub

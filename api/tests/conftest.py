@@ -1,3 +1,4 @@
+import json
 import time
 from types import SimpleNamespace
 
@@ -8,6 +9,7 @@ from fpdf import FPDF
 
 from app.config import get_settings
 from app.main import app
+from app.services.llm import LLMClient, get_llm
 
 
 def make_token(sub: str = "user-1", aud: str = "authenticated", exp_delta: int = 3600) -> str:
@@ -60,3 +62,31 @@ class FakeOpenAI:
         return SimpleNamespace(
             choices=[SimpleNamespace(message=SimpleNamespace(content=content))]
         )
+
+
+SAMPLE_CV_JSON = json.dumps({
+    "full_name": "Ada Lovelace",
+    "email": "ada@example.com",
+    "phone": None,
+    "location": "London",
+    "summary": "Software engineer with analytical background.",
+    "experiences": [{"title": "Developer", "company": "Analytical Engine Corp",
+                     "start_date": "2020", "end_date": "2024",
+                     "description": "Built compute engines."}],
+    "education": [{"degree": "BSc Mathematics", "school": "Cambridge", "year": "2019"}],
+    "skills": ["Python", "SQL", "FastAPI"],
+    "languages": ["English", "Turkish"],
+    "certifications": [],
+})
+
+
+def override_llm(contents: list[str]) -> FakeOpenAI:
+    fake = FakeOpenAI(contents)
+    app.dependency_overrides[get_llm] = lambda: LLMClient(fake)
+    return fake
+
+
+@pytest.fixture(autouse=True)
+def _clear_overrides():
+    yield
+    app.dependency_overrides.clear()

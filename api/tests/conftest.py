@@ -37,6 +37,13 @@ def sample_pdf_bytes() -> bytes:
     return bytes(pdf.output())
 
 
+@pytest.fixture(autouse=True)
+def _reset_usage():
+    from app.services.usage import usage_store
+    usage_store._counts.clear()
+    yield
+
+
 class FakeOpenAI:
     """Mimics openai.OpenAI: returns queued message contents in order."""
 

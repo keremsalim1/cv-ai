@@ -37,4 +37,6 @@ class LLMClient:
 def get_llm() -> LLMClient:
     from openai import OpenAI
 
-    return LLMClient(OpenAI(api_key=get_settings().openai_api_key))
+    # OpenAI() rejects an empty api_key at construction; fall back to a
+    # placeholder so the app boots without a key (calls then fail with 401).
+    return LLMClient(OpenAI(api_key=get_settings().openai_api_key or "missing-api-key"))

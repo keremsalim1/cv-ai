@@ -1,4 +1,6 @@
 import time
+from types import SimpleNamespace
+
 import jwt
 import pytest
 from fastapi.testclient import TestClient
@@ -33,3 +35,21 @@ def sample_pdf_bytes() -> bytes:
         "Skills: Python, SQL, FastAPI\n"
         "Experience: Analytical Engine Corp, Developer, 2020-2024")
     return bytes(pdf.output())
+
+
+class FakeOpenAI:
+    """Mimics openai.OpenAI: returns queued message contents in order."""
+
+    def __init__(self, contents: list[str]):
+        self._contents = list(contents)
+        self.calls: list[dict] = []
+        self.chat = SimpleNamespace(
+            completions=SimpleNamespace(create=self._create)
+        )
+
+    def _create(self, **kwargs):
+        self.calls.append(kwargs)
+        content = self._contents.pop(0)
+        return SimpleNamespace(
+            choices=[SimpleNamespace(message=SimpleNamespace(content=content))]
+        )

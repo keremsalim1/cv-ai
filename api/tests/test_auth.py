@@ -24,8 +24,15 @@ def test_missing_token(client):
 def test_bad_signature(client):
     import jwt, time
     bad = jwt.encode({"sub": "x", "aud": "authenticated", "exp": int(time.time()) + 60},
-                     "wrong-secret", algorithm="HS256")
+                     "wrong-secret-padded-to-thirty-two-bytes!", algorithm="HS256")
     assert client.get("/whoami", headers={"Authorization": f"Bearer {bad}"}).status_code == 401
+
+def test_missing_sub(client):
+    import jwt, time
+    from app.config import get_settings
+    tok = jwt.encode({"aud": "authenticated", "exp": int(time.time()) + 60},
+                     get_settings().supabase_jwt_secret, algorithm="HS256")
+    assert client.get("/whoami", headers={"Authorization": f"Bearer {tok}"}).status_code == 401
 
 def test_wrong_audience(client):
     tok = make_token(aud="anon")

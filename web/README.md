@@ -1,36 +1,34 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# CV-AI Web
 
-## Getting Started
+Next.js 16 frontend for CV-AI: upload a PDF CV, score it against a job posting,
+convert to an ATS-ready PDF. TR/EN via next-intl. Auth + data + files on Supabase
+(RLS); AI endpoints served by `../api` (FastAPI).
 
-First, run the development server:
+## Setup
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+    npm install
+    copy .env.example .env.local   # fill in Supabase URL/anon key + API URL
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Apply `../supabase/migrations/0001_init.sql` to your Supabase project
+(SQL Editor or `supabase db push`). Enable the Google provider in
+Supabase Auth and add `<origin>/auth/callback` to the redirect allowlist.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Run (with the API)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+    # terminal 1:  ..\api>  .venv\Scripts\uvicorn app.main:app --reload --port 8000
+    npm run dev
 
-## Learn More
+## Test
 
-To learn more about Next.js, take a look at the following resources:
+    npm run test        # unit (vitest)
+    npm run typecheck   # tsc --noEmit
+    npm run e2e         # needs E2E_BASE_URL (and `npm run dev` running)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Routes: `/`, `/login`, `/register`, `/dashboard`, `/cv/[id]`, `/cv/[id]/score`.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Windows note
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Run all commands from the correctly-cased path (`C:\Users\<you>\Desktop\cv-ai\web`,
+capital `D`). A lowercase `desktop` working directory loads duplicate copies of
+Next.js modules and `next build` fails with
+`Invariant: Expected workStore to be initialized`.

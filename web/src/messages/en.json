@@ -1,0 +1,76 @@
+{
+  "nav": {
+    "appName": "CV-AI",
+    "dashboard": "Dashboard",
+    "login": "Log in",
+    "register": "Sign up",
+    "logout": "Log out"
+  },
+  "landing": {
+    "title": "Get your CV job-ready with AI",
+    "subtitle": "Upload your PDF CV, see how well you fit a job posting, and download an ATS-ready CV in one click.",
+    "cta": "Start for free"
+  },
+  "auth": {
+    "loginTitle": "Log in",
+    "registerTitle": "Sign up",
+    "fullNameLabel": "Full name",
+    "emailLabel": "Email",
+    "passwordLabel": "Password",
+    "loginButton": "Log in",
+    "registerButton": "Sign up",
+    "googleButton": "Continue with Google",
+    "noAccount": "No account? Sign up",
+    "haveAccount": "Already have an account? Log in",
+    "checkEmail": "Check your email for the confirmation link."
+  },
+  "dashboard": {
+    "title": "My CVs",
+    "upload": "Upload CV (PDF)",
+    "uploading": "Uploading and parsing…",
+    "empty": "No CVs yet. Upload your PDF CV to get started.",
+    "atsBadge": "ATS",
+    "viewAction": "View",
+    "scoreAction": "Score"
+  },
+  "cv": {
+    "title": "CV Detail",
+    "contact": "Contact",
+    "summary": "Summary",
+    "experience": "Experience",
+    "education": "Education",
+    "skills": "Skills",
+    "languages": "Languages",
+    "certifications": "Certifications",
+    "convertAts": "Convert to ATS",
+    "converting": "Converting…",
+    "downloadPdf": "Download PDF",
+    "scoreCta": "Score against a job"
+  },
+  "score": {
+    "title": "Fit Score",
+    "urlLabel": "Job posting URL",
+    "pasteLabel": "Job posting text",
+    "pasteFallbackNotice": "Could not fetch the posting page. Please paste the job text below.",
+    "scoreButton": "Score",
+    "scoring": "Scoring…",
+    "cached": "Showing the previous result for this CV and posting.",
+    "strengths": "Strengths",
+    "gaps": "Gaps",
+    "suggestions": "Suggestions"
+  },
+  "errors": {
+    "SCANNED_PDF": "This PDF looks scanned. Please upload a text-based PDF.",
+    "INVALID_PDF": "Invalid file. Please upload a PDF.",
+    "FILE_TOO_LARGE": "File exceeds the 10 MB limit.",
+    "FETCH_FAILED": "Could not fetch the posting page.",
+    "NO_INPUT": "Enter a posting URL or paste the job text.",
+    "DAILY_LIMIT_REACHED": "You reached today's AI usage limit. Try again tomorrow.",
+    "AI_UNAVAILABLE": "The AI service is not responding right now. Please retry shortly.",
+    "NOT_AUTHENTICATED": "Your session expired. Please log in again.",
+    "UNKNOWN": "Something went wrong. Please try again."
+  },
+  "common": {
+    "loading": "Loading…"
+  }
+}

@@ -1,0 +1,85 @@
+import { createClient } from '@/lib/supabase/client'
+import type { CVData, EvaluationResult, JobCriteria, JobFetchResult } from '@/types/api'
+
+export class ApiError extends Error {
+  constructor(public code: string, public status: number) {
+    super(code)
+    this.name = 'ApiError'
+  }
+}
+
+function apiUrl(path: string): string {
+  return (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000') + path
+}
+
+async function authHeaders(): Promise<Record<string, string>> {
+  const supabase = createClient()
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session) throw new ApiError('NOT_AUTHENTICATED', 401)
+  return { Authorization: `Bearer ${session.access_token}` }
+}
+
+async function ensureOk(res: Response): Promise<Response> {
+  if (res.ok) return res
+  let code = 'UNKNOWN'
+  try {
+    const body = await res.json()
+    if (typeof body?.detail?.code === 'string') code = body.detail.code
+  } catch {
+    // non-JSON error body
+  }
+  throw new ApiError(code, res.status)
+}
+
+export async function parseCv(file: File): Promise<CVData> {
+  const form = new FormData()
+  form.append('file', file)
+  const res = await ensureOk(
+    await fetch(apiUrl('/cv/parse'), { method: 'POST', headers: await authHeaders(), body: form })
+  )
+  return (await res.json()).cv
+}
+
+export async function fetchJob(input: { url?: string; text?: string }): Promise<JobFetchResult> {
+  const res = await ensureOk(
+    await fetch(apiUrl('/job/fetch'), {
+      method: 'POST',
+      headers: { ...(await authHeaders()), 'Content-Type': 'application/json' },
+      body: JSON.stringify(input),
+    })
+  )
+  return res.json()
+}
+
+export async function scoreCv(cv: CVData, job: JobCriteria): Promise<EvaluationResult> {
+  const res = await ensureOk(
+    await fetch(apiUrl('/score'), {
+      method: 'POST',
+      headers: { ...(await authHeaders()), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cv, job }),
+    })
+  )
+  return res.json()
+}
+
+export async function atsRewrite(cv: CVData, language: string): Promise<CVData> {
+  const res = await ensureOk(
+    await fetch(apiUrl('/ats/rewrite'), {
+      method: 'POST',
+      headers: { ...(await authHeaders()), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cv, language }),
+    })
+  )
+  return (await res.json()).cv
+}
+
+export async function atsPdf(cv: CVData, language: string): Promise<Blob> {
+  const res = await ensureOk(
+    await fetch(apiUrl('/ats/pdf'), {
+      method: 'POST',
+      headers: { ...(await authHeaders()), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cv, language }),
+    })
+  )
+  return res.blob()
+}

@@ -1,0 +1,76 @@
+{
+  "nav": {
+    "appName": "CV-AI",
+    "dashboard": "Panel",
+    "login": "Giriş",
+    "register": "Kayıt Ol",
+    "logout": "Çıkış"
+  },
+  "landing": {
+    "title": "CV'nizi yapay zeka ile işe hazırlayın",
+    "subtitle": "PDF CV'nizi yükleyin, ilana uygunluğunuzu görün, tek tıkla ATS uyumlu CV indirin.",
+    "cta": "Ücretsiz Başla"
+  },
+  "auth": {
+    "loginTitle": "Giriş Yap",
+    "registerTitle": "Kayıt Ol",
+    "fullNameLabel": "Ad Soyad",
+    "emailLabel": "E-posta",
+    "passwordLabel": "Şifre",
+    "loginButton": "Giriş Yap",
+    "registerButton": "Kayıt Ol",
+    "googleButton": "Google ile devam et",
+    "noAccount": "Hesabınız yok mu? Kayıt olun",
+    "haveAccount": "Zaten hesabınız var mı? Giriş yapın",
+    "checkEmail": "Doğrulama bağlantısı için e-postanızı kontrol edin."
+  },
+  "dashboard": {
+    "title": "CV'lerim",
+    "upload": "CV Yükle (PDF)",
+    "uploading": "Yükleniyor ve okunuyor…",
+    "empty": "Henüz CV yüklemediniz. PDF CV'nizi yükleyerek başlayın.",
+    "atsBadge": "ATS",
+    "viewAction": "Görüntüle",
+    "scoreAction": "Skorla"
+  },
+  "cv": {
+    "title": "CV Detayı",
+    "contact": "İletişim",
+    "summary": "Özet",
+    "experience": "İş Deneyimi",
+    "education": "Eğitim",
+    "skills": "Beceriler",
+    "languages": "Diller",
+    "certifications": "Sertifikalar",
+    "convertAts": "ATS'ye Dönüştür",
+    "converting": "Dönüştürülüyor…",
+    "downloadPdf": "PDF İndir",
+    "scoreCta": "İlana Göre Skorla"
+  },
+  "score": {
+    "title": "Uygunluk Skoru",
+    "urlLabel": "İş ilanı bağlantısı",
+    "pasteLabel": "İlan metni",
+    "pasteFallbackNotice": "İlan sayfası çekilemedi. Lütfen ilan metnini aşağıya yapıştırın.",
+    "scoreButton": "Skorla",
+    "scoring": "Skorlanıyor…",
+    "cached": "Bu CV ve ilan için önceki sonuç gösteriliyor.",
+    "strengths": "Güçlü Yönler",
+    "gaps": "Eksikler",
+    "suggestions": "Öneriler"
+  },
+  "errors": {
+    "SCANNED_PDF": "Bu PDF taranmış görünüyor. Lütfen metin tabanlı bir PDF yükleyin.",
+    "INVALID_PDF": "Geçersiz dosya. Lütfen bir PDF yükleyin.",
+    "FILE_TOO_LARGE": "Dosya 10 MB sınırını aşıyor.",
+    "FETCH_FAILED": "İlan sayfası çekilemedi.",
+    "NO_INPUT": "Bir ilan bağlantısı girin veya ilan metnini yapıştırın.",
+    "DAILY_LIMIT_REACHED": "Günlük AI kullanım limitine ulaştınız. Yarın tekrar deneyin.",
+    "AI_UNAVAILABLE": "AI servisi şu anda yanıt vermiyor. Birazdan tekrar deneyin.",
+    "NOT_AUTHENTICATED": "Oturumunuz sona erdi. Lütfen tekrar giriş yapın.",
+    "UNKNOWN": "Beklenmeyen bir hata oluştu. Lütfen tekrar deneyin."
+  },
+  "common": {
+    "loading": "Yükleniyor…"
+  }
+}

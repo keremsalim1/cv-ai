@@ -21,6 +21,7 @@ class Education(BaseModel):
 
 class CVData(BaseModel):
     full_name: str
+    title: str | None = None
     email: str | None = None
     phone: str | None = None
     location: str | None = None

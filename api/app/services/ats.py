@@ -9,6 +9,10 @@ SYSTEM = (
     "You rewrite CVs to be ATS-compliant. Rules: standard section wording, "
     "concise bullet-style descriptions, measurable achievements where the "
     "original supports them, no invented facts, no tables/graphics/icons. "
+    "Write the summary in first person, active voice (e.g. Turkish 'ben dili': "
+    "'...geliştiriyorum', not '...geliştirmiştir'); never refer to the person "
+    "in third person. If 'title' is missing, derive it from the most recent "
+    "job title. "
     "Answer in language: {language}. Respond ONLY with JSON in the same CV schema "
     "you received."
 )
@@ -49,20 +53,28 @@ def render_pdf(cv: CVData, language: str) -> bytes:
     pdf.add_page()
 
     def heading(text: str):
-        pdf.set_font("Main", "B", 13)
-        pdf.cell(0, 9, text, new_x="LMARGIN", new_y="NEXT")
+        # Kakuna-style section break: centered heading over a full-width rule
+        pdf.set_font("Main", "B", 12)
+        pdf.cell(0, 9, text, new_x="LMARGIN", new_y="NEXT", align="C")
+        pdf.set_draw_color(120, 120, 120)
+        pdf.set_line_width(0.3)
+        pdf.line(pdf.l_margin, pdf.get_y(), pdf.w - pdf.r_margin, pdf.get_y())
+        pdf.ln(2)
         pdf.set_font("Main", "", 10.5)
 
     def line(text: str):
         # fpdf2 2.8.x leaves the cursor at line end; reset to the left margin
         pdf.multi_cell(0, 5.5, text, new_x="LMARGIN", new_y="NEXT")
 
-    pdf.set_font("Main", "B", 17)
-    pdf.cell(0, 10, cv.full_name, new_x="LMARGIN", new_y="NEXT")
+    pdf.set_font("Main", "B", 19)
+    pdf.cell(0, 11, cv.full_name, new_x="LMARGIN", new_y="NEXT", align="C")
+    if cv.title:
+        pdf.set_font("Main", "", 12)
+        pdf.cell(0, 7, cv.title, new_x="LMARGIN", new_y="NEXT", align="C")
     pdf.set_font("Main", "", 10)
-    contact = " | ".join(x for x in [cv.email, cv.phone, cv.location] if x)
+    contact = " | ".join(x for x in [cv.location, cv.phone, cv.email] if x)
     if contact:
-        line(contact)
+        pdf.cell(0, 6, contact, new_x="LMARGIN", new_y="NEXT", align="C")
     pdf.ln(3)
 
     if cv.summary:

@@ -42,7 +42,7 @@ vi.mock('@/lib/download', () => ({ downloadBlob: vi.fn() }))
 import { insertCv } from '@/lib/db'
 import { atsPdf, atsRewrite } from '@/lib/api'
 import { downloadBlob } from '@/lib/download'
-import CvDetailPage from '@/app/cv/[id]/page'
+import CvDetailPage from '@/app/(app)/cv/[id]/page'
 
 beforeEach(() => vi.clearAllMocks())
 

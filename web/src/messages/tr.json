@@ -6,6 +6,14 @@
     "register": "Kayıt Ol",
     "logout": "Çıkış"
   },
+  "sidebar": {
+    "label": "İşlemler",
+    "dashboard": "Panel",
+    "score": "Skorla",
+    "ats": "ATS'ye Çevir",
+    "optimize": "Optimize & Başvur",
+    "soon": "yakında"
+  },
   "landing": {
     "title": "CV'nizi yapay zeka ile işe hazırlayın",
     "subtitle": "PDF CV'nizi yükleyin, ilana uygunluğunuzu görün, tek tıkla ATS uyumlu CV indirin.",

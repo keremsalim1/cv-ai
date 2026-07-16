@@ -8,7 +8,7 @@ from app.routers import job as job_router
 from app.routers import score as score_router
 from app.services.llm import LLMError
 
-app = FastAPI(title="CV-AI API")
+app = FastAPI(title="KRESUME.ai API")
 
 app.add_middleware(
     CORSMiddleware,

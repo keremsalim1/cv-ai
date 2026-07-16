@@ -13,6 +13,13 @@ SYSTEM = (
     "'...geliştiriyorum', not '...geliştirmiştir'); never refer to the person "
     "in third person. If 'title' is missing, derive it from the most recent "
     "job title. "
+    "Analyze the person's profession from the CV and fill 'skill_groups': "
+    "group every skill under 3-5 category names that fit THAT profession "
+    "(e.g. a developer: Programming Languages / Frameworks & Tools / CS Concepts "
+    "/ Soft Skills; a nurse, accountant or designer gets categories natural to "
+    "their own field — never force tech categories). Category names must be in "
+    "the target language. Keep the flat 'skills' list too, with every skill "
+    "appearing in exactly one group. "
     "Answer in language: {language}. Respond ONLY with JSON in the same CV schema "
     "you received."
 )
@@ -92,10 +99,23 @@ def render_pdf(cv: CVData, language: str) -> bytes:
     if cv.education:
         heading(h["education"])
         for ed in cv.education:
-            line(f"{ed.degree} — {ed.school}" + (f" ({ed.year})" if ed.year else ""))
+            entry = f"{ed.degree} — {ed.school}" if ed.degree else ed.school
+            line(entry + (f" ({ed.year})" if ed.year else ""))
         pdf.ln(2)
-    if cv.skills:
-        heading(h["skills"]); line(", ".join(cv.skills)); pdf.ln(2)
+    if cv.skill_groups or cv.skills:
+        heading(h["skills"])
+        if cv.skill_groups:
+            for g in cv.skill_groups:
+                if not g.skills:
+                    continue
+                pdf.set_font("Main", "B", 10.5)
+                pdf.write(5.5, f"{g.name}: ")
+                pdf.set_font("Main", "", 10.5)
+                pdf.write(5.5, ", ".join(g.skills))
+                pdf.ln(6.5)
+        else:
+            line(", ".join(cv.skills))
+        pdf.ln(2)
     if cv.languages:
         heading(h["languages"]); line(", ".join(cv.languages)); pdf.ln(2)
     if cv.certifications:

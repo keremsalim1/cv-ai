@@ -16,6 +16,20 @@ def test_cvdata_minimal():
     assert cv.skills == [] and cv.experiences == []
 
 
+def test_education_degree_may_be_null():
+    # Real CVs include entries with no degree title (e.g. high school);
+    # the LLM returns null for them and parsing must not fail.
+    cv = CVData.model_validate({
+        "full_name": "Ada Lovelace",
+        "education": [
+            {"degree": "BSc Mathematics", "school": "Cambridge", "year": "2019"},
+            {"degree": None, "school": "Anadolu Lisesi", "year": None},
+        ],
+    })
+    assert cv.education[1].degree is None
+    assert cv.education[1].school == "Anadolu Lisesi"
+
+
 def test_evaluation_result_bounds():
     with pytest.raises(Exception):
         EvaluationResult(percent=101, stars=5, strengths=[], gaps=[], suggestions=[])

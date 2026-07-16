@@ -1,4 +1,4 @@
-# CV-AI
+# KRESUME.ai
 
 AI-powered CV parsing, job-fit scoring, and ATS conversion.
 

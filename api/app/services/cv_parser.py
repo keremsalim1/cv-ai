@@ -8,7 +8,7 @@ SYSTEM = (
     '"location": str|null, "summary": str|null, '
     '"experiences": [{"title": str, "company": str, "start_date": str|null, '
     '"end_date": str|null, "description": str|null}], '
-    '"education": [{"degree": str, "school": str, "year": str|null}], '
+    '"education": [{"degree": str|null, "school": str, "year": str|null}], '
     '"skills": [str], "languages": [str], "certifications": [str]}. '
     '"title" is the professional headline shown under the name, if any. '
     "Keep the CV's original language. Do not invent information."

@@ -1,6 +1,6 @@
 {
   "nav": {
-    "appName": "CV-AI",
+    "appName": "KRESUME.ai",
     "dashboard": "Dashboard",
     "login": "Log in",
     "register": "Sign up",
@@ -68,6 +68,7 @@
   "score": {
     "title": "Fit Score",
     "urlLabel": "Job posting URL",
+    "urlHint": "Paste the link to the page where the job posting itself opens; search-result or listing-page links will not work.",
     "pasteLabel": "Job posting text",
     "pasteFallbackNotice": "Could not fetch the posting page. Please paste the job text below.",
     "scoreButton": "Score",
@@ -82,6 +83,7 @@
     "INVALID_PDF": "Invalid file. Please upload a PDF.",
     "FILE_TOO_LARGE": "File exceeds the 10 MB limit.",
     "FETCH_FAILED": "Could not fetch the posting page.",
+    "JOB_PARSE_FAILED": "Could not read the job details from that page. Please paste the text instead.",
     "NO_INPUT": "Enter a posting URL or paste the job text.",
     "DAILY_LIMIT_REACHED": "You reached today's AI usage limit. Try again tomorrow.",
     "AI_UNAVAILABLE": "The AI service is not responding right now. Please retry shortly.",

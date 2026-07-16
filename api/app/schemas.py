@@ -14,9 +14,14 @@ class Experience(BaseModel):
 
 
 class Education(BaseModel):
-    degree: str
+    degree: str | None = None
     school: str
     year: str | None = None
+
+
+class SkillGroup(BaseModel):
+    name: str
+    skills: list[str] = []
 
 
 class CVData(BaseModel):
@@ -29,12 +34,15 @@ class CVData(BaseModel):
     experiences: list[Experience] = []
     education: list[Education] = []
     skills: list[str] = []
+    # Filled by the ATS rewrite: skills organized under profession-specific
+    # category names (e.g. "Programming Languages"). Empty for raw parses.
+    skill_groups: list[SkillGroup] = []
     languages: list[str] = []
     certifications: list[str] = []
 
 
 class JobCriteria(BaseModel):
-    title: str
+    title: str | None = None
     company: str | None = None
     requirements: list[str] = []
     skills: list[str] = []

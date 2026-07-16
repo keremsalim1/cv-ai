@@ -1,6 +1,6 @@
 import json
 
-from app.schemas import CVData
+from app.schemas import CVData, SkillGroup
 from app.services.ats import render_pdf
 from tests.conftest import SAMPLE_CV_JSON, override_llm
 
@@ -28,12 +28,52 @@ def test_render_pdf_title_and_header_text():
     assert "London" in text and "ada@example.com" in text
 
 
+def test_render_pdf_education_without_degree():
+    import pymupdf
+
+    cv = _cv()
+    cv.education[0].degree = None
+    pdf = render_pdf(cv, "en")
+    text = pymupdf.open(stream=pdf, filetype="pdf")[0].get_text()
+    assert "None" not in text
+    assert cv.education[0].school in text
+
+
 def test_render_pdf_turkish_chars():
     cv = _cv()
     cv.full_name = "Şükrü Çağrı Öğüt"
     cv.summary = "Gömülü yazılım geliştirici; İstanbul'da 5 yıl deneyim."
     pdf = render_pdf(cv, "tr")
     assert pdf.startswith(b"%PDF")
+
+
+def test_render_pdf_grouped_skills():
+    import pymupdf
+
+    cv = _cv()
+    cv.skill_groups = [
+        SkillGroup(name="Programming Languages", skills=["Python", "C"]),
+        SkillGroup(name="Soft Skills", skills=["Leadership"]),
+        SkillGroup(name="Empty Group", skills=[]),
+    ]
+    pdf = render_pdf(cv, "en")
+    text = pymupdf.open(stream=pdf, filetype="pdf")[0].get_text()
+    assert "Programming Languages" in text
+    assert "Python, C" in text
+    assert "Leadership" in text
+    assert "Empty Group" not in text
+
+
+def test_rewrite_endpoint_returns_skill_groups(client, auth_headers):
+    rewritten = json.loads(SAMPLE_CV_JSON)
+    rewritten["skill_groups"] = [
+        {"name": "Programming Languages", "skills": ["Python"]},
+    ]
+    override_llm([json.dumps(rewritten)])
+    r = client.post("/ats/rewrite", headers=auth_headers,
+                    json={"cv": json.loads(SAMPLE_CV_JSON), "language": "en"})
+    assert r.status_code == 200
+    assert r.json()["cv"]["skill_groups"][0]["name"] == "Programming Languages"
 
 
 def test_rewrite_endpoint(client, auth_headers):

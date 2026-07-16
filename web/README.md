@@ -1,6 +1,6 @@
-# CV-AI Web
+# KRESUME.ai Web
 
-Next.js 16 frontend for CV-AI: upload a PDF CV, score it against a job posting,
+Next.js 16 frontend for KRESUME.ai: upload a PDF CV, score it against a job posting,
 convert to an ATS-ready PDF. TR/EN via next-intl. Auth + data + files on Supabase
 (RLS); AI endpoints served by `../api` (FastAPI).
 

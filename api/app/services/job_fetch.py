@@ -9,8 +9,9 @@ UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
 
 SYSTEM = (
     "You extract job posting criteria. Respond ONLY with JSON: "
-    '{"title": str, "company": str|null, "requirements": [str], "skills": [str]}. '
-    "requirements = qualifications/experience asked for; skills = concrete tools/technologies."
+    '{"title": str|null, "company": str|null, "requirements": [str], "skills": [str]}. '
+    "requirements = qualifications/experience asked for; skills = concrete tools/technologies. "
+    "If the text is not a job posting (login wall, cookie notice, error page), return null title."
 )
 
 

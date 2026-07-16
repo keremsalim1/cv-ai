@@ -92,6 +92,6 @@ it('falls back to paste mode when the fetch fails', async () => {
   renderWithIntl(<ScorePage />)
   await userEvent.type(await screen.findByLabelText('İş ilanı bağlantısı'), 'https://linkedin.com/x')
   await userEvent.click(screen.getByRole('button', { name: 'Skorla' }))
-  expect(await screen.findByText(/yapıştırın/)).toBeInTheDocument()
+  expect(await screen.findByText(/İlan sayfası çekilemedi/)).toBeInTheDocument()
   expect(screen.getByLabelText('İlan metni')).toBeInTheDocument()
 })

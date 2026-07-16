@@ -29,4 +29,6 @@ def fetch(
     else:
         raise HTTPException(status_code=422, detail={"code": "NO_INPUT"})
     criteria = job_fetch.extract_criteria(description, llm)
+    if criteria.title is None:
+        raise HTTPException(status_code=422, detail={"code": "JOB_PARSE_FAILED"})
     return {"criteria": criteria, "description": description, "fetch_method": method}

@@ -13,6 +13,18 @@ def test_parse_cv_success(client, auth_headers, sample_pdf_bytes):
     assert "Python" in cv["skills"]
 
 
+def test_parse_cv_null_degree(client, auth_headers, sample_pdf_bytes):
+    # Regression: LLM returning null for an education degree used to 502.
+    import json
+    cv = json.loads(SAMPLE_CV_JSON)
+    cv["education"].append({"degree": None, "school": "Anadolu Lisesi", "year": None})
+    override_llm([json.dumps(cv)])
+    r = client.post("/cv/parse", headers=auth_headers,
+                    files={"file": ("cv.pdf", sample_pdf_bytes, "application/pdf")})
+    assert r.status_code == 200
+    assert r.json()["cv"]["education"][-1]["degree"] is None
+
+
 def test_scanned_pdf_rejected(client, auth_headers):
     pdf = FPDF(); pdf.add_page()
     r = client.post("/cv/parse", headers=auth_headers,

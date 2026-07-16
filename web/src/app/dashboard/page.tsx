@@ -1,8 +1,10 @@
 'use client'
 import { useCallback, useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
+import { Upload, FileText, AlertCircle } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-import { insertCv, listCvs } from '@/lib/db'
+import { deleteCv, insertCv, listCvs } from '@/lib/db'
 import { ApiError, parseCv } from '@/lib/api'
 import { messageKeyForCode } from '@/lib/errors'
 import { MAX_FILE_SIZE } from '@/lib/constants'
@@ -11,14 +13,20 @@ import { CvCard } from '@/components/CvCard'
 
 export default function DashboardPage() {
   const t = useTranslations()
+  const router = useRouter()
   const [supabase] = useState(createClient)
   const [cvs, setCvs] = useState<CvRow[] | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const load = useCallback(async () => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      router.replace('/login')
+      return
+    }
     setCvs(await listCvs(supabase))
-  }, [supabase])
+  }, [supabase, router])
 
   useEffect(() => {
     load()
@@ -56,11 +64,37 @@ export default function DashboardPage() {
     }
   }
 
+  async function onDelete(cv: CvRow) {
+    if (!window.confirm(t('dashboard.deleteConfirm'))) return
+    setError(null)
+    try {
+      await deleteCv(supabase, cv)
+      await load()
+    } catch {
+      setError(t('errors.UNKNOWN'))
+    }
+  }
+
+  const count = cvs?.length ?? 0
+
   return (
-    <main className="mx-auto flex max-w-2xl flex-col gap-4 px-4 py-10">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">{t('dashboard.title')}</h1>
-        <label className="cursor-pointer rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground">
+    <main className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-5 py-12 sm:px-8">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="font-display text-3xl font-semibold tracking-tight text-ink">
+            {t('dashboard.title')}
+          </h1>
+          {cvs !== null && count > 0 && (
+            <p className="mt-1 font-mono text-xs tracking-wide text-muted-foreground">
+              {count} {count === 1 ? 'CV' : 'CV'}
+            </p>
+          )}
+        </div>
+
+        <label
+          className={`inline-flex cursor-pointer items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground shadow-md shadow-primary/20 transition-all hover:-translate-y-0.5 hover:bg-primary/90 ${busy ? 'pointer-events-none opacity-70' : ''}`}
+        >
+          <Upload aria-hidden className="size-4" />
           {busy ? t('dashboard.uploading') : t('dashboard.upload')}
           <input
             type="file"
@@ -72,14 +106,32 @@ export default function DashboardPage() {
           />
         </label>
       </div>
-      {error && <p className="text-sm text-red-600">{error}</p>}
+
+      {error && (
+        <p className="flex items-center gap-2 rounded-lg bg-destructive/8 px-4 py-3 text-sm text-destructive">
+          <AlertCircle aria-hidden className="size-4 shrink-0" />
+          {error}
+        </p>
+      )}
+
       {cvs === null ? (
-        <p className="text-sm text-muted-foreground">{t('common.loading')}</p>
-      ) : cvs.length === 0 ? (
-        <p className="text-sm text-muted-foreground">{t('dashboard.empty')}</p>
+        <div className="flex flex-col gap-3" aria-hidden>
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="h-[68px] animate-pulse rounded-xl bg-muted/70" />
+          ))}
+        </div>
+      ) : count === 0 ? (
+        <div className="grain flex flex-col items-center gap-4 rounded-2xl border border-dashed border-border bg-card/50 px-6 py-16 text-center">
+          <span className="grid size-14 place-items-center rounded-full bg-primary/8 text-primary ring-1 ring-primary/12">
+            <FileText aria-hidden className="size-6" />
+          </span>
+          <p className="max-w-xs text-[15px] leading-relaxed text-muted-foreground">
+            {t('dashboard.empty')}
+          </p>
+        </div>
       ) : (
         <div className="flex flex-col gap-3">
-          {cvs.map((cv) => <CvCard key={cv.id} cv={cv} />)}
+          {cvs.map((cv) => <CvCard key={cv.id} cv={cv} onDelete={() => onDelete(cv)} />)}
         </div>
       )}
     </main>

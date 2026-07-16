@@ -29,3 +29,22 @@ def test_raises_after_two_bad():
     fake = FakeOpenAI(["nope", "still nope"])
     with pytest.raises(LLMError):
         LLMClient(fake).chat_json(MODEL_FAST, "sys", "user", Point)
+
+
+def test_invalid_content_logged(caplog):
+    fake = FakeOpenAI(["nope", "still nope"])
+    with caplog.at_level("WARNING"), pytest.raises(LLMError):
+        LLMClient(fake).chat_json(MODEL_FAST, "sys", "user", Point)
+    assert "nope" in caplog.text  # raw content preserved for diagnosis
+
+
+def test_upstream_api_error_becomes_llm_error():
+    import httpx
+    from openai import APIConnectionError
+
+    class ExplodingOpenAI(FakeOpenAI):
+        def _create(self, **kwargs):
+            raise APIConnectionError(request=httpx.Request("POST", "http://x"))
+
+    with pytest.raises(LLMError):
+        LLMClient(ExplodingOpenAI([])).chat_json(MODEL_FAST, "sys", "user", Point)

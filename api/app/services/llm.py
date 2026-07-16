@@ -1,6 +1,10 @@
+import logging
+
 from pydantic import BaseModel, ValidationError
 
 from app.config import get_settings
+
+logger = logging.getLogger(__name__)
 
 _settings = get_settings()
 
@@ -19,22 +23,33 @@ class LLMClient:
 
     def chat_json(self, model: str, system: str, user: str,
                   schema: type[BaseModel]) -> BaseModel:
+        from openai import OpenAIError
+
         for _attempt in range(2):
-            resp = self._client.chat.completions.create(
-                model=model,
-                messages=[
-                    {"role": "system", "content": system},
-                    {"role": "user", "content": user},
-                ],
-                response_format={"type": "json_object"},
-                temperature=0,
-            )
+            try:
+                resp = self._client.chat.completions.create(
+                    model=model,
+                    messages=[
+                        {"role": "system", "content": system},
+                        {"role": "user", "content": user},
+                    ],
+                    response_format={"type": "json_object"},
+                    temperature=0,
+                )
+            except OpenAIError as exc:
+                logger.warning("LLM request failed (%s, attempt %d): %s",
+                               model, _attempt + 1, exc)
+                continue
             content = resp.choices[0].message.content
             try:
                 return schema.model_validate_json(content)
-            except ValidationError:
+            except ValidationError as exc:
+                logger.warning(
+                    "LLM returned invalid JSON (%s, attempt %d): %s | content: %.500r",
+                    model, _attempt + 1, exc.errors()[:2], content,
+                )
                 continue
-        raise LLMError("LLM returned invalid JSON twice")
+        raise LLMError("LLM gave no valid response in two attempts")
 
 
 def get_llm() -> LLMClient:

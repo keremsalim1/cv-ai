@@ -13,7 +13,11 @@ export function LocaleSwitcher() {
   }
 
   return (
-    <button onClick={toggle} aria-label="switch language" className="text-sm font-medium">
+    <button
+      onClick={toggle}
+      aria-label="switch language"
+      className="rounded-md px-2.5 py-1.5 font-mono text-xs font-medium tracking-wide text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+    >
       {next.toUpperCase()}
     </button>
   )

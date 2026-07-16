@@ -15,6 +15,19 @@ def test_render_pdf_produces_pdf():
     assert len(pdf) > 1000
 
 
+def test_render_pdf_title_and_header_text():
+    import pymupdf
+
+    cv = _cv()
+    cv.title = "Software Engineer"
+    pdf = render_pdf(cv, "en")
+    doc = pymupdf.open(stream=pdf, filetype="pdf")
+    text = doc[0].get_text()
+    assert "Ada Lovelace" in text
+    assert "Software Engineer" in text
+    assert "London" in text and "ada@example.com" in text
+
+
 def test_render_pdf_turkish_chars():
     cv = _cv()
     cv.full_name = "Şükrü Çağrı Öğüt"

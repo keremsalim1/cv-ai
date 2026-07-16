@@ -50,7 +50,7 @@ vi.mock('@/lib/api', async (importOriginal) => {
 
 import { findEvaluation, findJobByUrl, insertEvaluation, insertJob } from '@/lib/db'
 import { ApiError, fetchJob, scoreCv } from '@/lib/api'
-import ScorePage from '@/app/cv/[id]/score/page'
+import ScorePage from '@/app/(app)/cv/[id]/score/page'
 
 const FETCHED = {
   criteria: { title: 'Dev', company: 'Acme', requirements: ['Python'], skills: ['Python'] },

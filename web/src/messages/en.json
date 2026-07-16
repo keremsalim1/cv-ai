@@ -6,6 +6,14 @@
     "register": "Sign up",
     "logout": "Log out"
   },
+  "sidebar": {
+    "label": "Operations",
+    "dashboard": "Dashboard",
+    "score": "Score",
+    "ats": "Convert to ATS",
+    "optimize": "Optimize & Apply",
+    "soon": "soon"
+  },
   "landing": {
     "title": "Get your CV job-ready with AI",
     "subtitle": "Upload your PDF CV, see how well you fit a job posting, and download an ATS-ready CV in one click.",

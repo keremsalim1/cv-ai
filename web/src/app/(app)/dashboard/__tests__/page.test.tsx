@@ -31,7 +31,7 @@ vi.mock('@/lib/api', async (importOriginal) => {
 
 import { listCvs, insertCv } from '@/lib/db'
 import { parseCv, ApiError } from '@/lib/api'
-import DashboardPage from '@/app/dashboard/page'
+import DashboardPage from '@/app/(app)/dashboard/page'
 
 const CV: CVData = {
   full_name: 'Ada', email: null, phone: null, location: null, summary: null,

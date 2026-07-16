@@ -15,6 +15,13 @@ export async function getCv(sb: SupabaseClient, id: string): Promise<CvRow | nul
   return data as CvRow | null
 }
 
+export async function deleteCv(sb: SupabaseClient, cv: CvRow): Promise<void> {
+  const { error } = await sb.from('cvs').delete().eq('id', cv.id)
+  if (error) throw error
+  // Row is gone; a failed storage cleanup only leaves an orphan file
+  await sb.storage.from('cvs').remove([cv.file_path])
+}
+
 export async function insertCv(sb: SupabaseClient, row: NewCv): Promise<CvRow> {
   const { data, error } = await sb.from('cvs').insert(row).select().single()
   if (error) throw error

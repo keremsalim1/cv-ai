@@ -9,7 +9,22 @@
   "landing": {
     "title": "Get your CV job-ready with AI",
     "subtitle": "Upload your PDF CV, see how well you fit a job posting, and download an ATS-ready CV in one click.",
-    "cta": "Start for free"
+    "cta": "Start for free",
+    "ctaNote": "No credit card · Turkish & English",
+    "badge": "AI-powered career assistant",
+    "howTitle": "Job-ready in three steps",
+    "step1Title": "Upload your CV",
+    "step1Body": "Drop your PDF; AI parses and structures it in seconds.",
+    "step2Title": "Score against a job",
+    "step2Body": "Paste a posting link; see your strengths and gaps clearly.",
+    "step3Title": "Convert to ATS",
+    "step3Body": "Download a clean PDF that applicant-tracking systems can read, in one click.",
+    "demoRole": "Senior Backend Developer",
+    "demoMatch": "strong match",
+    "demoStrength": "5 yrs Python & distributed systems matched",
+    "demoGap": "Missing: Kubernetes experience",
+    "closingTitle": "Ready for your next application",
+    "ctaClosing": "Get started now"
   },
   "auth": {
     "loginTitle": "Log in",
@@ -31,7 +46,9 @@
     "empty": "No CVs yet. Upload your PDF CV to get started.",
     "atsBadge": "ATS",
     "viewAction": "View",
-    "scoreAction": "Score"
+    "scoreAction": "Score",
+    "deleteAction": "Delete",
+    "deleteConfirm": "Delete this CV? This cannot be undone."
   },
   "cv": {
     "title": "CV Detail",
@@ -42,6 +59,7 @@
     "skills": "Skills",
     "languages": "Languages",
     "certifications": "Certifications",
+    "atsLanguage": "Conversion language",
     "convertAts": "Convert to ATS",
     "converting": "Converting…",
     "downloadPdf": "Download PDF",

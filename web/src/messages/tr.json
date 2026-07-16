@@ -9,7 +9,22 @@
   "landing": {
     "title": "CV'nizi yapay zeka ile işe hazırlayın",
     "subtitle": "PDF CV'nizi yükleyin, ilana uygunluğunuzu görün, tek tıkla ATS uyumlu CV indirin.",
-    "cta": "Ücretsiz Başla"
+    "cta": "Ücretsiz Başla",
+    "ctaNote": "Kredi kartı gerekmez · Türkçe ve İngilizce",
+    "badge": "Yapay zeka destekli kariyer asistanı",
+    "howTitle": "Üç adımda işe hazır",
+    "step1Title": "CV'ni yükle",
+    "step1Body": "PDF'ini bırak; yapay zeka saniyeler içinde okuyup yapılandırır.",
+    "step2Title": "İlana göre skorla",
+    "step2Body": "İlan bağlantısını yapıştır; güçlü yönlerini ve eksiklerini net gör.",
+    "step3Title": "ATS'ye dönüştür",
+    "step3Body": "Tek tıkla, başvuru sistemlerinin okuyabildiği temiz bir PDF indir.",
+    "demoRole": "Kıdemli Backend Geliştirici",
+    "demoMatch": "güçlü eşleşme",
+    "demoStrength": "5 yıl Python & dağıtık sistemler eşleşiyor",
+    "demoGap": "Eksik: Kubernetes deneyimi",
+    "closingTitle": "Bir sonraki başvuruna hazır ol",
+    "ctaClosing": "Hemen başla"
   },
   "auth": {
     "loginTitle": "Giriş Yap",
@@ -31,7 +46,9 @@
     "empty": "Henüz CV yüklemediniz. PDF CV'nizi yükleyerek başlayın.",
     "atsBadge": "ATS",
     "viewAction": "Görüntüle",
-    "scoreAction": "Skorla"
+    "scoreAction": "Skorla",
+    "deleteAction": "Sil",
+    "deleteConfirm": "Bu CV silinsin mi? Bu işlem geri alınamaz."
   },
   "cv": {
     "title": "CV Detayı",
@@ -42,6 +59,7 @@
     "skills": "Beceriler",
     "languages": "Diller",
     "certifications": "Sertifikalar",
+    "atsLanguage": "Dönüştürme dili",
     "convertAts": "ATS'ye Dönüştür",
     "converting": "Dönüştürülüyor…",
     "downloadPdf": "PDF İndir",

@@ -4,9 +4,12 @@ import { vi, type Mock } from 'vitest'
 import { renderWithIntl } from '@/test/utils'
 import type { CVData } from '@/types/api'
 
-vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),
-}))
+vi.mock('next/navigation', () => {
+  // stable identity, like the real useRouter — a fresh object per call re-runs
+  // every effect that depends on the router
+  const router = { push: vi.fn(), refresh: vi.fn(), replace: vi.fn() }
+  return { useRouter: () => router }
+})
 
 const upload = vi.fn(async () => ({ data: { path: 'p' }, error: null }))
 vi.mock('@/lib/supabase/client', () => ({

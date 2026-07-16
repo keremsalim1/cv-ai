@@ -2,8 +2,11 @@ from pydantic import BaseModel, ValidationError
 
 from app.config import get_settings
 
-MODEL_FAST = "gpt-4o-mini"
-MODEL_SMART = "gpt-4o"
+_settings = get_settings()
+
+# Google Gemini models, served through the OpenAI-compatible endpoint.
+MODEL_FAST = _settings.gemini_model_fast
+MODEL_SMART = _settings.gemini_model_smart
 
 
 class LLMError(Exception):
@@ -37,6 +40,13 @@ class LLMClient:
 def get_llm() -> LLMClient:
     from openai import OpenAI
 
-    # OpenAI() rejects an empty api_key at construction; fall back to a
-    # placeholder so the app boots without a key (calls then fail with 401).
-    return LLMClient(OpenAI(api_key=get_settings().openai_api_key or "missing-api-key"))
+    # Gemini's OpenAI-compatible endpoint: same SDK, Google's models. OpenAI()
+    # rejects an empty api_key at construction; fall back to a placeholder so the
+    # app boots without a key (calls then fail with 401).
+    settings = get_settings()
+    return LLMClient(
+        OpenAI(
+            api_key=settings.gemini_api_key or "missing-api-key",
+            base_url=settings.gemini_base_url,
+        )
+    )

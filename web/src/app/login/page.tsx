@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { GoogleIcon } from '@/components/GoogleIcon'
 
 export default function LoginPage() {
   const t = useTranslations('auth')
@@ -36,24 +37,57 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="mx-auto flex max-w-sm flex-col gap-4 px-4 py-16">
-      <Card className="flex flex-col gap-4 p-6">
-        <h1 className="text-xl font-semibold">{t('loginTitle')}</h1>
-        <form onSubmit={onSubmit} className="flex flex-col gap-3">
-          <label className="flex flex-col gap-1 text-sm">
-            {t('emailLabel')}
-            <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-          </label>
-          <label className="flex flex-col gap-1 text-sm">
-            {t('passwordLabel')}
-            <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-          </label>
-          {error && <p className="text-sm text-red-600">{error}</p>}
-          <Button type="submit">{t('loginButton')}</Button>
-        </form>
-        <Button variant="outline" onClick={google}>{t('googleButton')}</Button>
-        <Link href="/register" className="text-sm underline">{t('noAccount')}</Link>
-      </Card>
+    <main className="oxblood-wash grain relative flex min-h-[calc(100dvh-3.5rem)] items-center justify-center px-5 py-14">
+      <div className="w-full max-w-sm">
+        <h1 className="text-center font-display text-3xl font-semibold tracking-tight text-ink">
+          {t('loginTitle')}
+        </h1>
+
+        <Card className="mt-7 gap-5 p-7 shadow-xl shadow-primary/5">
+          <form onSubmit={onSubmit} className="flex flex-col gap-4">
+            <label className="flex flex-col gap-1.5 text-sm font-medium text-foreground">
+              {t('emailLabel')}
+              <Input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="h-11 text-base"
+                placeholder="ada@ornek.com"
+              />
+            </label>
+            <label className="flex flex-col gap-1.5 text-sm font-medium text-foreground">
+              {t('passwordLabel')}
+              <Input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="h-11 text-base"
+                placeholder="••••••••"
+              />
+            </label>
+            {error && (
+              <p className="rounded-md bg-destructive/8 px-3 py-2 text-sm text-destructive">{error}</p>
+            )}
+            <Button type="submit" className="h-11 text-base">{t('loginButton')}</Button>
+          </form>
+
+          <div className="hairline" />
+
+          <Button variant="outline" onClick={google} className="h-11 gap-2.5 text-base">
+            <GoogleIcon className="size-[18px]" />
+            {t('googleButton')}
+          </Button>
+
+          <Link
+            href="/register"
+            className="text-center text-sm text-muted-foreground underline-offset-4 transition-colors hover:text-primary hover:underline"
+          >
+            {t('noAccount')}
+          </Link>
+        </Card>
+      </div>
     </main>
   )
 }

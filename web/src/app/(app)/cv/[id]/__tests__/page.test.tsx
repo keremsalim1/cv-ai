@@ -1,20 +1,11 @@
-import { screen, waitFor } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
-import { vi, type Mock } from 'vitest'
+import { screen } from '@testing-library/react'
+import { vi } from 'vitest'
 import { renderWithIntl } from '@/test/utils'
 import type { CvRow } from '@/types/db'
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),
   useParams: () => ({ id: 'c1' }),
-}))
-
-const upload = vi.fn(async () => ({ data: { path: 'p' }, error: null }))
-vi.mock('@/lib/supabase/client', () => ({
-  createClient: () => ({
-    auth: { getUser: async () => ({ data: { user: { id: 'u1' } } }) },
-    storage: { from: () => ({ upload }) },
-  }),
 }))
 
 const ROW: CvRow = {
@@ -27,41 +18,21 @@ const ROW: CvRow = {
   },
 }
 
-vi.mock('@/lib/db', () => ({
-  getCv: vi.fn(async () => ROW),
-  insertCv: vi.fn(async () => ({ ...ROW, id: 'c2', is_ats: true })),
+vi.mock('@/lib/supabase/client', () => ({
+  createClient: () => ({
+    auth: { getUser: async () => ({ data: { user: { id: 'u1' } } }) },
+  }),
 }))
 
-vi.mock('@/lib/api', async (importOriginal) => {
-  const orig = await importOriginal<typeof import('@/lib/api')>()
-  return { ...orig, atsRewrite: vi.fn(), atsPdf: vi.fn() }
-})
+vi.mock('@/lib/db', () => ({
+  getCv: vi.fn(async () => ROW),
+}))
 
-vi.mock('@/lib/download', () => ({ downloadBlob: vi.fn() }))
-
-import { insertCv } from '@/lib/db'
-import { atsPdf, atsRewrite } from '@/lib/api'
-import { downloadBlob } from '@/lib/download'
 import CvDetailPage from '@/app/(app)/cv/[id]/page'
-
-beforeEach(() => vi.clearAllMocks())
 
 it('renders the parsed CV preview', async () => {
   renderWithIntl(<CvDetailPage />)
   expect(await screen.findByRole('heading', { name: 'Ada Lovelace' })).toBeInTheDocument()
   expect(screen.getByText(/Dev — AEC/)).toBeInTheDocument()
   expect(screen.getByText('Python')).toBeInTheDocument()
-})
-
-it('converts to ATS: rewrite, pdf, storage, new row, download', async () => {
-  ;(atsRewrite as Mock).mockResolvedValue(ROW.parsed_data)
-  ;(atsPdf as Mock).mockResolvedValue(new Blob([new Uint8Array([1])], { type: 'application/pdf' }))
-  renderWithIntl(<CvDetailPage />)
-  await userEvent.click(await screen.findByRole('button', { name: "ATS'ye Dönüştür" }))
-  await waitFor(() => expect(downloadBlob).toHaveBeenCalled())
-  expect(atsRewrite).toHaveBeenCalledWith(ROW.parsed_data, 'tr')
-  expect(atsPdf).toHaveBeenCalled()
-  expect(upload).toHaveBeenCalled()
-  const inserted = (insertCv as Mock).mock.calls[0][1]
-  expect(inserted).toMatchObject({ is_ats: true, source_cv_id: 'c1', user_id: 'u1' })
 })

@@ -66,12 +66,7 @@
     "education": "Education",
     "skills": "Skills",
     "languages": "Languages",
-    "certifications": "Certifications",
-    "atsLanguage": "Conversion language",
-    "convertAts": "Convert to ATS",
-    "converting": "Converting…",
-    "downloadPdf": "Download PDF",
-    "scoreCta": "Score against a job"
+    "certifications": "Certifications"
   },
   "score": {
     "title": "Fit Score",
@@ -86,6 +81,14 @@
     "gaps": "Gaps",
     "suggestions": "Suggestions"
   },
+  "ats": {
+    "title": "Convert to ATS",
+    "intro": "Pick a CV and a language; you get a clean, ATS-readable PDF. The copy is also saved to your dashboard.",
+    "language": "Conversion language",
+    "convert": "Convert to ATS",
+    "converting": "Converting…",
+    "done": "Converted! The PDF was downloaded and the ATS copy was saved to your dashboard."
+  },
   "errors": {
     "SCANNED_PDF": "This PDF looks scanned. Please upload a text-based PDF.",
     "INVALID_PDF": "Invalid file. Please upload a PDF.",
@@ -99,6 +102,7 @@
     "UNKNOWN": "Something went wrong. Please try again."
   },
   "common": {
-    "loading": "Loading…"
+    "loading": "Loading…",
+    "cvLabel": "CV"
   }
 }

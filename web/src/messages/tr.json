@@ -66,12 +66,7 @@
     "education": "Eğitim",
     "skills": "Beceriler",
     "languages": "Diller",
-    "certifications": "Sertifikalar",
-    "atsLanguage": "Dönüştürme dili",
-    "convertAts": "ATS'ye Dönüştür",
-    "converting": "Dönüştürülüyor…",
-    "downloadPdf": "PDF İndir",
-    "scoreCta": "İlana Göre Skorla"
+    "certifications": "Sertifikalar"
   },
   "score": {
     "title": "Uygunluk Skoru",
@@ -86,6 +81,14 @@
     "gaps": "Eksikler",
     "suggestions": "Öneriler"
   },
+  "ats": {
+    "title": "ATS'ye Çevir",
+    "intro": "Bir CV ve dil seçin; ATS sistemlerinin okuyabildiği temiz bir PDF alın. Kopya panelinize de kaydedilir.",
+    "language": "Dönüştürme dili",
+    "convert": "ATS'ye Çevir",
+    "converting": "Dönüştürülüyor…",
+    "done": "Dönüştürüldü! PDF indirildi ve ATS kopyası panelinize kaydedildi."
+  },
   "errors": {
     "SCANNED_PDF": "Bu PDF taranmış görünüyor. Lütfen metin tabanlı bir PDF yükleyin.",
     "INVALID_PDF": "Geçersiz dosya. Lütfen bir PDF yükleyin.",
@@ -99,6 +102,7 @@
     "UNKNOWN": "Beklenmeyen bir hata oluştu. Lütfen tekrar deneyin."
   },
   "common": {
-    "loading": "Yükleniyor…"
+    "loading": "Yükleniyor…",
+    "cvLabel": "CV"
   }
 }

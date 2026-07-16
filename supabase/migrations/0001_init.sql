@@ -1,4 +1,4 @@
--- CV-AI initial schema (MVP Phase 1)
+-- KRESUME.ai initial schema (MVP Phase 1)
 
 create table public.profiles (
   id uuid primary key references auth.users (id) on delete cascade,

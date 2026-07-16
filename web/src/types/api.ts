@@ -9,13 +9,19 @@ export interface Experience {
 }
 
 export interface Education {
-  degree: string
+  degree: string | null
   school: string
   year: string | null
 }
 
+export interface SkillGroup {
+  name: string
+  skills: string[]
+}
+
 export interface CVData {
   full_name: string
+  title?: string | null
   email: string | null
   phone: string | null
   location: string | null
@@ -23,6 +29,8 @@ export interface CVData {
   experiences: Experience[]
   education: Education[]
   skills: string[]
+  /** Set by the ATS rewrite; absent on raw parses and older rows. */
+  skill_groups?: SkillGroup[]
   languages: string[]
   certifications: string[]
 }

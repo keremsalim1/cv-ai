@@ -161,7 +161,8 @@ export default function CvDetailPage() {
             <ul className="flex flex-col gap-1.5">
               {d.education.map((e, i) => (
                 <li key={i}>
-                  <span className="font-medium text-ink">{e.degree}</span> — {e.school}
+                  <span className="font-medium text-ink">{e.degree ?? e.school}</span>
+                  {e.degree ? <> — {e.school}</> : ''}
                   {e.year ? <span className="text-muted-foreground"> ({e.year})</span> : ''}
                 </li>
               ))}
@@ -169,18 +170,40 @@ export default function CvDetailPage() {
           </Section>
         )}
 
-        {d.skills.length > 0 && (
+        {(d.skill_groups?.length || d.skills.length > 0) && (
           <Section title={t('cv.skills')}>
-            <ul className="flex flex-wrap gap-2">
-              {d.skills.map((s) => (
-                <li
-                  key={s}
-                  className="rounded-md bg-secondary px-2.5 py-1 text-[13px] font-medium text-secondary-foreground"
-                >
-                  {s}
-                </li>
-              ))}
-            </ul>
+            {d.skill_groups?.length ? (
+              <div className="flex flex-col gap-3">
+                {d.skill_groups.map((g) => (
+                  <div key={g.name}>
+                    <p className="mb-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      {g.name}
+                    </p>
+                    <ul className="flex flex-wrap gap-2">
+                      {g.skills.map((s) => (
+                        <li
+                          key={s}
+                          className="rounded-md bg-secondary px-2.5 py-1 text-[13px] font-medium text-secondary-foreground"
+                        >
+                          {s}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <ul className="flex flex-wrap gap-2">
+                {d.skills.map((s) => (
+                  <li
+                    key={s}
+                    className="rounded-md bg-secondary px-2.5 py-1 text-[13px] font-medium text-secondary-foreground"
+                  >
+                    {s}
+                  </li>
+                ))}
+              </ul>
+            )}
           </Section>
         )}
 

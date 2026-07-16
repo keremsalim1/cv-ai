@@ -1,4 +1,4 @@
-# CV-AI API
+# KRESUME.ai API
 
 FastAPI backend: CV parsing, job-fit scoring, ATS conversion.
 

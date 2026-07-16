@@ -43,3 +43,15 @@ def test_no_input(client, auth_headers):
     r = client.post("/job/fetch", headers=auth_headers, json={})
     assert r.status_code == 422
     assert r.json()["detail"]["code"] == "NO_INPUT"
+
+
+def test_unparseable_page_returns_code(client, auth_headers, monkeypatch):
+    monkeypatch.setattr(job_fetch, "fetch_job_text",
+                        lambda url: "Cookie notice. Accept all cookies to continue.")
+    override_llm([json.dumps({
+        "title": None, "company": None, "requirements": [], "skills": [],
+    })])
+    r = client.post("/job/fetch", headers=auth_headers,
+                    json={"url": "https://example.com/job/1"})
+    assert r.status_code == 422
+    assert r.json()["detail"]["code"] == "JOB_PARSE_FAILED"

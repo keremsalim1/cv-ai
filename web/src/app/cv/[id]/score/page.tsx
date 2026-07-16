@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import { CheckCircle2, AlertTriangle, Lightbulb, Sparkles } from 'lucide-react'
+import { CheckCircle2, AlertTriangle, Info, Lightbulb, Sparkles } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import {
   findEvaluation, findJobByUrl, getCv, insertEvaluation, insertJob,
@@ -82,7 +82,7 @@ export default function ScorePage() {
       const row = await insertEvaluation(supabase, { cv_id: cv.id, job_id: job.id, ...ev })
       setResult(row)
     } catch (err) {
-      if (err instanceof ApiError && err.code === 'FETCH_FAILED') {
+      if (err instanceof ApiError && (err.code === 'FETCH_FAILED' || err.code === 'JOB_PARSE_FAILED')) {
         setShowPaste(true)
         setError(t('score.pasteFallbackNotice'))
       } else {
@@ -127,6 +127,10 @@ export default function ScorePage() {
             placeholder="https://…"
           />
         </label>
+        <p className="-mt-2 flex items-start gap-1.5 text-[13px] font-normal leading-snug text-muted-foreground">
+          <Info aria-hidden className="mt-0.5 size-3.5 shrink-0" />
+          {t('score.urlHint')}
+        </p>
         {showPaste && (
           <label className="flex flex-col gap-1.5 text-sm font-medium text-foreground">
             {t('score.pasteLabel')}

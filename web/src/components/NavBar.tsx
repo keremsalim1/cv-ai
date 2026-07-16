@@ -37,12 +37,34 @@ export function NavBar() {
     <header className="sticky top-0 z-40 border-b border-border/70 bg-background/80 backdrop-blur-md">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-5 sm:px-8">
         <Link href="/" className="group flex items-center gap-2.5">
-          <span
+          <svg
             aria-hidden
-            className="grid size-6 place-items-center rounded-[5px] bg-primary font-display text-[13px] font-semibold leading-none text-primary-foreground shadow-sm transition-transform duration-200 group-hover:-rotate-6"
+            viewBox="0 0 24 24"
+            className="size-6 shrink-0 text-primary transition-transform duration-200 ease-out group-hover:-rotate-6 group-hover:scale-110"
           >
-            C
-          </span>
+            <ellipse cx="2.6" cy="13.5" rx="1.7" ry="3" fill="currentColor" />
+            <ellipse cx="21.4" cy="13.5" rx="1.7" ry="3" fill="currentColor" />
+            <circle cx="7.2" cy="4.6" r="2.1" fill="currentColor" />
+            <circle cx="16.8" cy="4.6" r="2.1" fill="currentColor" />
+            <rect x="4" y="5.5" width="16" height="14.5" rx="6" fill="currentColor" />
+            <rect
+              x="7.4"
+              y="9"
+              width="9.2"
+              height="7.6"
+              rx="2.4"
+              fill="var(--background)"
+            />
+            <rect x="9" y="11.2" width="2.4" height="2.8" rx="0.7" fill="currentColor" />
+            <rect x="13.4" y="12.4" width="2.2" height="1.1" rx="0.55" fill="currentColor" />
+            <path
+              d="M10.2 14.6c0.6 1 3 1 3.6 0"
+              stroke="currentColor"
+              strokeWidth="1"
+              strokeLinecap="round"
+              fill="none"
+            />
+          </svg>
           <span className="font-display text-[17px] font-semibold tracking-tight text-ink">
             {t('appName')}
           </span>

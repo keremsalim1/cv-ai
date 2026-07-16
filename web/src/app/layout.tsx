@@ -25,7 +25,7 @@ const spectral = Spectral({
 });
 
 export const metadata: Metadata = {
-  title: "CV-AI — CV'nizi işe hazırlayın",
+  title: "KRESUME.ai — CV'nizi işe hazırlayın",
   description: "AI-powered CV analysis, job-fit scoring, and ATS conversion",
 };
 

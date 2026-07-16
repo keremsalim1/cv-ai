@@ -1,6 +1,6 @@
 {
   "nav": {
-    "appName": "CV-AI",
+    "appName": "KRESUME.ai",
     "dashboard": "Panel",
     "login": "Giriş",
     "register": "Kayıt Ol",
@@ -68,6 +68,7 @@
   "score": {
     "title": "Uygunluk Skoru",
     "urlLabel": "İş ilanı bağlantısı",
+    "urlHint": "Doğrudan iş ilanının açıldığı sayfanın bağlantısını yapıştırın; arama sonucu veya liste sayfası bağlantılarıyla skorlama çalışmaz.",
     "pasteLabel": "İlan metni",
     "pasteFallbackNotice": "İlan sayfası çekilemedi. Lütfen ilan metnini aşağıya yapıştırın.",
     "scoreButton": "Skorla",
@@ -82,6 +83,7 @@
     "INVALID_PDF": "Geçersiz dosya. Lütfen bir PDF yükleyin.",
     "FILE_TOO_LARGE": "Dosya 10 MB sınırını aşıyor.",
     "FETCH_FAILED": "İlan sayfası çekilemedi.",
+    "JOB_PARSE_FAILED": "İlan sayfasından bilgiler okunamadı. Lütfen ilan metnini yapıştırın.",
     "NO_INPUT": "Bir ilan bağlantısı girin veya ilan metnini yapıştırın.",
     "DAILY_LIMIT_REACHED": "Günlük AI kullanım limitine ulaştınız. Yarın tekrar deneyin.",
     "AI_UNAVAILABLE": "AI servisi şu anda yanıt vermiyor. Birazdan tekrar deneyin.",

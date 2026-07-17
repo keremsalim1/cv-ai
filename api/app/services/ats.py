@@ -13,13 +13,14 @@ SYSTEM = (
     "'...geliştiriyorum', not '...geliştirmiştir'); never refer to the person "
     "in third person. If 'title' is missing, derive it from the most recent "
     "job title. "
-    "Analyze the person's profession from the CV and fill 'skill_groups': "
-    "group every skill under 3-5 category names that fit THAT profession "
-    "(e.g. a developer: Programming Languages / Frameworks & Tools / CS Concepts "
-    "/ Soft Skills; a nurse, accountant or designer gets categories natural to "
-    "their own field — never force tech categories). Category names must be in "
-    "the target language. Keep the flat 'skills' list too, with every skill "
-    "appearing in exactly one group. "
+    "Analyze the person's profession from the CV and fill 'skill_groups' as a "
+    'list of {{"name": str, "skills": [str]}} objects (the group label key is '
+    '"name", never "category"): group every skill under 3-5 group names that '
+    "fit THAT profession (e.g. a developer: Programming Languages / Frameworks "
+    "& Tools / CS Concepts / Soft Skills; a nurse, accountant or designer gets "
+    "groups natural to their own field — never force tech categories). Group "
+    "names must be in the target language. Keep the flat 'skills' list too, "
+    "with every skill appearing in exactly one group. "
     "Answer in language: {language}. Respond ONLY with JSON in the same CV schema "
     "you received."
 )

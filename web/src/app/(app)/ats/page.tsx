@@ -12,6 +12,7 @@ import { downloadBlob } from '@/lib/download'
 import { cn } from '@/lib/utils'
 import type { CvRow } from '@/types/db'
 import { CvSelect } from '@/components/CvSelect'
+import { ProgressTimer } from '@/components/ProgressTimer'
 import { Button, buttonVariants } from '@/components/ui/button'
 
 function AtsPageInner() {
@@ -63,7 +64,9 @@ function AtsPageInner() {
         user_id: user.id, file_path: path, parsed_data: rewritten,
         is_ats: true, source_cv_id: cv.id,
       })
-      downloadBlob(pdf, 'cv-ats.pdf')
+      const safeName = rewritten.full_name.trim()
+        .replace(/[\\/:*?"<>|]/g, '').replace(/\s+/g, '_')
+      downloadBlob(pdf, `${safeName}_ATSCV.pdf`)
       setDone(true)
     } catch (err) {
       setError(t(err instanceof ApiError ? messageKeyForCode(err.code) : 'errors.UNKNOWN'))
@@ -128,6 +131,7 @@ function AtsPageInner() {
               {t('ats.done')}
             </p>
           )}
+          {busy && <ProgressTimer label={t('ats.converting')} />}
           <Button onClick={convert} disabled={busy || !selected} className="h-11 gap-1.5 text-base">
             <Download aria-hidden className="size-4" />
             {busy ? t('ats.converting') : t('ats.convert')}

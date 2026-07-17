@@ -4,9 +4,11 @@ import { vi, type Mock } from 'vitest'
 import { renderWithIntl } from '@/test/utils'
 import type { CvRow, EvaluationRow, JobPostingRow } from '@/types/db'
 
+const ROUTER = { push: vi.fn(), replace: vi.fn(), refresh: vi.fn() }
+const PARAMS = new URLSearchParams('cv=c1')
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),
-  useParams: () => ({ id: 'c1' }),
+  useRouter: () => ROUTER,
+  useSearchParams: () => PARAMS,
 }))
 
 vi.mock('@/lib/supabase/client', () => ({
@@ -36,7 +38,7 @@ const EVAL: EvaluationRow = {
 }
 
 vi.mock('@/lib/db', () => ({
-  getCv: vi.fn(async () => ROW),
+  listCvs: vi.fn(async () => [ROW]),
   findJobByUrl: vi.fn(async () => null),
   insertJob: vi.fn(async () => JOB),
   findEvaluation: vi.fn(async () => null),
@@ -50,7 +52,7 @@ vi.mock('@/lib/api', async (importOriginal) => {
 
 import { findEvaluation, findJobByUrl, insertEvaluation, insertJob } from '@/lib/db'
 import { ApiError, fetchJob, scoreCv } from '@/lib/api'
-import ScorePage from '@/app/(app)/cv/[id]/score/page'
+import ScorePage from '@/app/(app)/score/page'
 
 const FETCHED = {
   criteria: { title: 'Dev', company: 'Acme', requirements: ['Python'], skills: ['Python'] },

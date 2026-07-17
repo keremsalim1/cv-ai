@@ -73,6 +73,7 @@ it('converts, downloads the PDF and saves the ATS copy', async () => {
   await screen.findByLabelText('CV')
   await userEvent.click(screen.getByRole('button', { name: "ATS'ye Çevir" }))
   await waitFor(() => expect(downloadBlob).toHaveBeenCalled())
+  expect(downloadBlob).toHaveBeenCalledWith(expect.anything(), 'Ada_ATSCV.pdf')
   expect(insertCv).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
     is_ats: true, source_cv_id: 'c2',
   }))

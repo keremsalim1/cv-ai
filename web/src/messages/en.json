@@ -105,6 +105,7 @@
   "common": {
     "loading": "Loading…",
     "cvLabel": "CV",
+    "elapsed": "{seconds}s",
     "noCvs": "You don't have any CVs yet. Upload one from the dashboard first."
   }
 }

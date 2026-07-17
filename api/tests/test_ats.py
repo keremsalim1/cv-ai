@@ -64,6 +64,19 @@ def test_render_pdf_grouped_skills():
     assert "Empty Group" not in text
 
 
+def test_rewrite_endpoint_accepts_category_alias(client, auth_headers):
+    # Gemini labels groups "category" despite the prompt; must not 502
+    rewritten = json.loads(SAMPLE_CV_JSON)
+    rewritten["skill_groups"] = [
+        {"category": "Programlama Dilleri", "skills": ["Python", "C"]},
+    ]
+    override_llm([json.dumps(rewritten)])
+    r = client.post("/ats/rewrite", headers=auth_headers,
+                    json={"cv": json.loads(SAMPLE_CV_JSON), "language": "tr"})
+    assert r.status_code == 200
+    assert r.json()["cv"]["skill_groups"][0]["name"] == "Programlama Dilleri"
+
+
 def test_rewrite_endpoint_returns_skill_groups(client, auth_headers):
     rewritten = json.loads(SAMPLE_CV_JSON)
     rewritten["skill_groups"] = [

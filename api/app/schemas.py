@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import AliasChoices, BaseModel, Field
 
 
 def stars_from_percent(percent: int) -> int:
@@ -20,7 +20,8 @@ class Education(BaseModel):
 
 
 class SkillGroup(BaseModel):
-    name: str
+    # Gemini sometimes labels the group "category" despite the prompt; accept both
+    name: str = Field(validation_alias=AliasChoices("name", "category"))
     skills: list[str] = []
 
 

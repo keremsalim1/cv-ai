@@ -191,12 +191,6 @@
   }
 }
 
-/* Indeterminate progress: real duration is unknown (LLM call), bar slides */
-@keyframes progress-slide {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(300%); }
-}
-
 @layer components {
   /* Display serif: premium literary authority for headlines & data */
   .font-display {

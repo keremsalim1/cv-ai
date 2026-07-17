@@ -104,6 +104,7 @@
   },
   "common": {
     "loading": "Loading…",
-    "cvLabel": "CV"
+    "cvLabel": "CV",
+    "noCvs": "You don't have any CVs yet. Upload one from the dashboard first."
   }
 }

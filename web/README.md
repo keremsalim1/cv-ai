@@ -24,7 +24,8 @@ Supabase Auth and add `<origin>/auth/callback` to the redirect allowlist.
     npm run typecheck   # tsc --noEmit
     npm run e2e         # needs E2E_BASE_URL (and `npm run dev` running)
 
-Routes: `/`, `/login`, `/register`, `/dashboard`, `/cv/[id]`, `/cv/[id]/score`.
+Routes: `/`, `/login`, `/register`, `/dashboard`, `/cv/[id]` (view-only), `/score`,
+`/ats` (`/cv/[id]/score` now redirects to `/score?cv=<id>`).
 
 ## Windows note
 

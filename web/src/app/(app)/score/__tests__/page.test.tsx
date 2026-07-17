@@ -50,7 +50,7 @@ vi.mock('@/lib/api', async (importOriginal) => {
   return { ...orig, fetchJob: vi.fn(), scoreCv: vi.fn() }
 })
 
-import { findEvaluation, findJobByUrl, insertEvaluation, insertJob } from '@/lib/db'
+import { findEvaluation, findJobByUrl, insertEvaluation, insertJob, listCvs } from '@/lib/db'
 import { ApiError, fetchJob, scoreCv } from '@/lib/api'
 import ScorePage from '@/app/(app)/score/page'
 
@@ -96,4 +96,11 @@ it('falls back to paste mode when the fetch fails', async () => {
   await userEvent.click(screen.getByRole('button', { name: 'Skorla' }))
   expect(await screen.findByText(/İlan sayfası çekilemedi/)).toBeInTheDocument()
   expect(screen.getByLabelText('İlan metni')).toBeInTheDocument()
+})
+
+it('shows the empty-CV state and hides the form when there are no CVs', async () => {
+  ;(listCvs as Mock).mockResolvedValueOnce([])
+  renderWithIntl(<ScorePage />)
+  expect(await screen.findByText(/Henüz CV'niz yok/)).toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Skorla' })).not.toBeInTheDocument()
 })

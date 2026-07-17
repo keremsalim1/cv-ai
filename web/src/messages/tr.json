@@ -104,6 +104,7 @@
   },
   "common": {
     "loading": "Yükleniyor…",
-    "cvLabel": "CV"
+    "cvLabel": "CV",
+    "noCvs": "Henüz CV'niz yok. Önce panelden bir CV yükleyin."
   }
 }

@@ -1,5 +1,6 @@
 'use client'
 import { Suspense, useCallback, useEffect, useState } from 'react'
+import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useLocale, useTranslations } from 'next-intl'
 import { Download, AlertCircle, CheckCircle2, FileOutput } from 'lucide-react'
@@ -8,9 +9,10 @@ import { insertCv, listCvs } from '@/lib/db'
 import { ApiError, atsPdf, atsRewrite } from '@/lib/api'
 import { messageKeyForCode } from '@/lib/errors'
 import { downloadBlob } from '@/lib/download'
+import { cn } from '@/lib/utils'
 import type { CvRow } from '@/types/db'
 import { CvSelect } from '@/components/CvSelect'
-import { Button } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
 
 function AtsPageInner() {
   const t = useTranslations()
@@ -91,36 +93,47 @@ function AtsPageInner() {
         </p>
       </header>
 
-      <div className="flex flex-col gap-4 rounded-2xl bg-card p-6 ring-1 ring-foreground/10">
-        <CvSelect cvs={cvs} value={selected} onChange={setSelected} />
-        <label className="flex flex-col gap-1.5 text-sm font-medium text-foreground">
-          {t('ats.language')}
-          <select
-            value={atsLang}
-            onChange={(e) => setAtsLang(e.target.value as 'tr' | 'en')}
-            className="h-11 rounded-lg border border-border bg-background px-3 text-base font-medium text-foreground transition-all outline-none hover:bg-muted focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-          >
-            <option value="tr">Türkçe</option>
-            <option value="en">English</option>
-          </select>
-        </label>
-        {error && (
-          <p className="flex items-center gap-2 rounded-lg bg-destructive/8 px-4 py-3 text-sm text-destructive">
-            <AlertCircle aria-hidden className="size-4 shrink-0" />
-            {error}
+      {cvs.length === 0 ? (
+        <div className="flex flex-col items-center gap-4 rounded-2xl border border-dashed border-border bg-card/50 px-6 py-16 text-center">
+          <p className="max-w-xs text-[15px] leading-relaxed text-muted-foreground">
+            {t('common.noCvs')}
           </p>
-        )}
-        {done && (
-          <p className="flex items-center gap-2 rounded-lg bg-success/10 px-4 py-3 text-sm text-success">
-            <CheckCircle2 aria-hidden className="size-4 shrink-0" />
-            {t('ats.done')}
-          </p>
-        )}
-        <Button onClick={convert} disabled={busy || !selected} className="h-11 gap-1.5 text-base">
-          <Download aria-hidden className="size-4" />
-          {busy ? t('ats.converting') : t('ats.convert')}
-        </Button>
-      </div>
+          <Link href="/dashboard" className={cn(buttonVariants({ size: 'sm' }))}>
+            {t('nav.dashboard')}
+          </Link>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-4 rounded-2xl bg-card p-6 ring-1 ring-foreground/10">
+          <CvSelect cvs={cvs} value={selected} onChange={(id) => { setSelected(id); setDone(false); setError(null) }} />
+          <label className="flex flex-col gap-1.5 text-sm font-medium text-foreground">
+            {t('ats.language')}
+            <select
+              value={atsLang}
+              onChange={(e) => setAtsLang(e.target.value as 'tr' | 'en')}
+              className="h-11 rounded-lg border border-border bg-background px-3 text-base font-medium text-foreground transition-all outline-none hover:bg-muted focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+            >
+              <option value="tr">Türkçe</option>
+              <option value="en">English</option>
+            </select>
+          </label>
+          {error && (
+            <p className="flex items-center gap-2 rounded-lg bg-destructive/8 px-4 py-3 text-sm text-destructive">
+              <AlertCircle aria-hidden className="size-4 shrink-0" />
+              {error}
+            </p>
+          )}
+          {done && (
+            <p className="flex items-center gap-2 rounded-lg bg-success/10 px-4 py-3 text-sm text-success">
+              <CheckCircle2 aria-hidden className="size-4 shrink-0" />
+              {t('ats.done')}
+            </p>
+          )}
+          <Button onClick={convert} disabled={busy || !selected} className="h-11 gap-1.5 text-base">
+            <Download aria-hidden className="size-4" />
+            {busy ? t('ats.converting') : t('ats.convert')}
+          </Button>
+        </div>
+      )}
     </main>
   )
 }

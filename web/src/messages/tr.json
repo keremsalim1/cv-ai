@@ -55,6 +55,7 @@
     "atsBadge": "ATS",
     "viewAction": "Görüntüle",
     "scoreAction": "Skorla",
+    "atsAction": "ATS",
     "deleteAction": "Sil",
     "deleteConfirm": "Bu CV silinsin mi? Bu işlem geri alınamaz."
   },

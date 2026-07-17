@@ -55,6 +55,7 @@
     "atsBadge": "ATS",
     "viewAction": "View",
     "scoreAction": "Score",
+    "atsAction": "ATS",
     "deleteAction": "Delete",
     "deleteConfirm": "Delete this CV? This cannot be undone."
   },

@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
-import { FileText, Eye, Target, Trash2 } from 'lucide-react'
+import { FileText, Eye, Target, Trash2, FileOutput } from 'lucide-react'
 import type { CvRow } from '@/types/db'
 import { Card } from '@/components/ui/card'
 
@@ -33,11 +33,18 @@ export function CvCard({ cv, onDelete }: { cv: CvRow; onDelete?: () => void }) {
           {t('viewAction')}
         </Link>
         <Link
-          href={`/cv/${cv.id}/score`}
+          href={`/score?cv=${cv.id}`}
           className="inline-flex items-center gap-1.5 rounded-md bg-primary/8 px-3 py-1.5 text-sm font-medium text-primary transition-colors hover:bg-primary/14"
         >
           <Target aria-hidden className="size-4" />
           {t('scoreAction')}
+        </Link>
+        <Link
+          href={`/ats?cv=${cv.id}`}
+          className="inline-flex items-center gap-1.5 rounded-md bg-primary/8 px-3 py-1.5 text-sm font-medium text-primary transition-colors hover:bg-primary/14"
+        >
+          <FileOutput aria-hidden className="size-4" />
+          {t('atsAction')}
         </Link>
         {onDelete && (
           <button

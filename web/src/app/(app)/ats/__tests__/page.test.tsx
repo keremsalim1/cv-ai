@@ -53,7 +53,7 @@ vi.mock('@/lib/api', async (importOriginal) => {
 
 vi.mock('@/lib/download', () => ({ downloadBlob: vi.fn() }))
 
-import { insertCv } from '@/lib/db'
+import { insertCv, listCvs } from '@/lib/db'
 import { atsRewrite, atsPdf } from '@/lib/api'
 import { downloadBlob } from '@/lib/download'
 import AtsPage from '@/app/(app)/ats/page'
@@ -77,4 +77,11 @@ it('converts, downloads the PDF and saves the ATS copy', async () => {
     is_ats: true, source_cv_id: 'c2',
   }))
   expect(await screen.findByText(/Dönüştürüldü/)).toBeInTheDocument()
+})
+
+it('shows the empty-CV state and hides the form when there are no CVs', async () => {
+  ;(listCvs as Mock).mockResolvedValueOnce([])
+  renderWithIntl(<AtsPage />)
+  expect(await screen.findByText(/Henüz CV'niz yok/)).toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: "ATS'ye Çevir" })).not.toBeInTheDocument()
 })

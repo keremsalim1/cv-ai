@@ -14,7 +14,7 @@ import { cn } from '@/lib/utils'
 import type { CvRow, EvaluationRow } from '@/types/db'
 import { StarRating } from '@/components/StarRating'
 import { CvSelect } from '@/components/CvSelect'
-import { ProgressTimer } from '@/components/ProgressTimer'
+import { ProgressBar } from '@/components/ProgressBar'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -172,7 +172,7 @@ function ScorePageInner() {
               {error}
             </p>
           )}
-          {busy && <ProgressTimer label={t('score.scoring')} />}
+          {busy && <ProgressBar label={t('score.scoring')} />}
           <Button type="submit" disabled={busy} className="h-11 text-base">
             {busy ? t('score.scoring') : t('score.scoreButton')}
           </Button>

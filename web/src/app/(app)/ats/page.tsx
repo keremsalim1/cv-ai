@@ -12,7 +12,7 @@ import { downloadBlob } from '@/lib/download'
 import { cn } from '@/lib/utils'
 import type { CvRow } from '@/types/db'
 import { CvSelect } from '@/components/CvSelect'
-import { ProgressTimer } from '@/components/ProgressTimer'
+import { ProgressBar } from '@/components/ProgressBar'
 import { Button, buttonVariants } from '@/components/ui/button'
 
 function AtsPageInner() {
@@ -131,7 +131,7 @@ function AtsPageInner() {
               {t('ats.done')}
             </p>
           )}
-          {busy && <ProgressTimer label={t('ats.converting')} />}
+          {busy && <ProgressBar label={t('ats.converting')} />}
           <Button onClick={convert} disabled={busy || !selected} className="h-11 gap-1.5 text-base">
             <Download aria-hidden className="size-4" />
             {busy ? t('ats.converting') : t('ats.convert')}

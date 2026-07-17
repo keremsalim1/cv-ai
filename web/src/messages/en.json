@@ -105,6 +105,7 @@
   "common": {
     "loading": "Loading…",
     "cvLabel": "CV",
+    "longWait": "High demand right now — this may take a bit longer than usual.",
     "noCvs": "You don't have any CVs yet. Upload one from the dashboard first."
   }
 }

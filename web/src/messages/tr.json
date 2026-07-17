@@ -105,6 +105,7 @@
   "common": {
     "loading": "Yükleniyor…",
     "cvLabel": "CV",
+    "longWait": "Yoğunluktan dolayı işleminiz normalden uzun sürebilir.",
     "noCvs": "Henüz CV'niz yok. Önce panelden bir CV yükleyin."
   }
 }

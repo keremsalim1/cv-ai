@@ -21,3 +21,13 @@ it('shows the label and the bar fills as time passes', () => {
   expect(after).toBeGreaterThan(before)
   expect(after).toBeLessThan(100)
 })
+
+it('shows the high-demand notice after 60 seconds', () => {
+  vi.useFakeTimers()
+  renderWithIntl(<ProgressBar label="Dönüştürülüyor…" />)
+  expect(screen.queryByText(/uzun sürebilir/)).toBeNull()
+  act(() => {
+    vi.advanceTimersByTime(61_000)
+  })
+  expect(screen.getByText(/Yoğunluktan dolayı işleminiz normalden uzun sürebilir/)).toBeInTheDocument()
+})

@@ -70,3 +70,8 @@ class FormField(BaseModel):
 class FormSchema(BaseModel):
     fields: list[FormField] = []
     submit_selector: str | None = None
+
+
+class FieldAnswer(BaseModel):
+    field_id: str
+    value: str = ""

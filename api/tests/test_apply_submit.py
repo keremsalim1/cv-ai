@@ -43,11 +43,44 @@ def test_submit_fills_and_submits(client, auth_headers):
     assert any("full_name" in sel or "input[1]" in sel for sel in filled)
     assert ("I love APIs." in filled.values())
     assert driver.selects and driver.selects[0][1] == "3-5"
-    # radio "Yes" + checkbox + submit button all clicked
-    assert len(driver.clicks) >= 3
+    # radio "Yes" + submit button clicked
+    assert len(driver.clicks) >= 2
+    # kvkk checkbox set to checked via idempotent set_checked (not a blind click)
+    assert driver.checks and driver.checks[0][1] is True
     # the ATS PDF was attached to the file field
     assert driver.files and driver.files[0][1].endswith(".pdf")
     assert driver.closed is True
+
+
+def test_submit_skips_one_unfillable_field(client, auth_headers):
+    # a select_by_label that raises (option not on the live page) must not abort
+    # the whole submission — the remaining fields still fill and submit happens.
+    class FlakyDriver(FakeDriver):
+        def select_by_label(self, xpath, label):
+            raise RuntimeError("option not found")
+
+    _use_driver(FlakyDriver([_html("greenhouse_like.html")]))
+    r = client.post("/apply/submit", headers=auth_headers, json={
+        "cv": json.loads(SAMPLE_CV_JSON), "url": "https://x.com",
+        "language": "en", "answers": ANSWERS,
+    })
+    assert r.status_code == 200
+    assert r.json()["status"] == "submitted"
+
+
+def test_submit_browser_launch_failure_returns_failed(client, auth_headers):
+    # make_driver raising must be a clean "failed", not a 500, and must not
+    # leak the temp PDF (finally still runs).
+    def boom(headed):
+        raise RuntimeError("profile locked")
+
+    app.dependency_overrides[get_driver_factory] = lambda: boom
+    r = client.post("/apply/submit", headers=auth_headers, json={
+        "cv": json.loads(SAMPLE_CV_JSON), "url": "https://x.com",
+        "language": "en", "answers": ANSWERS,
+    })
+    assert r.status_code == 200
+    assert r.json()["status"] == "failed"
 
 
 def test_submit_captcha_stops(client, auth_headers):

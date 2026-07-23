@@ -7,11 +7,13 @@ from pathlib import Path
 import trafilatura
 from pydantic import BaseModel
 
+from app.config import get_settings
 from app.schemas import CVData, FieldAnswer, FormField, FormSchema
 from app.services import ats
 from app.services.browser import BrowserDriver
 from app.services.llm import MODEL_SMART, LLMClient
 from app.services.page_analysis import detect_captcha, detect_login, extract_form
+from app.services.usage import enforce_limit, usage_store
 
 logger = logging.getLogger(__name__)
 
@@ -77,7 +79,7 @@ class PrepareIn(BaseModel):
 
 
 def prepare_application(cv: CVData, url: str, language: str, headed: bool,
-                        llm: LLMClient, make_driver) -> dict:
+                        llm: LLMClient, make_driver, user_id: str) -> dict:
     driver: BrowserDriver = make_driver(headed)
     try:
         driver.goto(url)
@@ -93,6 +95,9 @@ def prepare_application(cv: CVData, url: str, language: str, headed: bool,
         if not schema.fields:
             return {"status": "form_not_found", "job_text": _job_text(html)}
 
+        # Only charge a daily AI credit once we're actually calling the LLM —
+        # login/captcha/form_not_found bail out above without touching it.
+        enforce_limit(usage_store, user_id, get_settings().daily_ai_limit)
         job_text = _job_text(html)
         user_payload = PrepareIn(cv=cv, job_text=job_text,
                                  form=schema.fields).model_dump_json()
@@ -115,22 +120,30 @@ def _fill_form(driver: BrowserDriver, schema: FormSchema,
                answers: list[FieldAnswer], pdf_path: str) -> None:
     values = {a.field_id: a.value for a in answers}
     for field in schema.fields:
-        if field.type == "file":
-            driver.set_files(field.selector, pdf_path)
-            continue
-        value = values.get(field.id, "")
-        if not value:
-            continue
-        if field.type in ("text", "textarea"):
-            driver.fill(field.selector, value)
-        elif field.type == "select":
-            driver.select_by_label(field.selector, value)
-        elif field.type == "radio":
-            if value in field.options:
-                driver.click(field.option_selectors[field.options.index(value)])
-        elif field.type == "checkbox":
-            if value.lower() in ("yes", "true", "on", "evet", "1"):
-                driver.click(field.selector)
+        # One unfillable field (stale selector, option not on the live page)
+        # must not abort the whole submission — log it and keep going.
+        try:
+            if field.type == "file":
+                driver.set_files(field.selector, pdf_path)
+                continue
+            value = values.get(field.id, "")
+            if not value:
+                continue
+            if field.type in ("text", "textarea"):
+                driver.fill(field.selector, value)
+            elif field.type == "select":
+                driver.select_by_label(field.selector, value)
+            elif field.type == "radio":
+                if value in field.options:
+                    driver.click(field.option_selectors[field.options.index(value)])
+            elif field.type == "checkbox":
+                # set_checked is idempotent, so a box pre-checked by the site
+                # ends up matching the user's answer either way.
+                driver.set_checked(field.selector,
+                                   value.lower() in ("yes", "true", "on", "evet", "1"))
+        except Exception as exc:
+            logger.warning("could not fill field %s (%s): %s",
+                           field.id, field.type, exc)
 
 
 def submit_application(cv: CVData, url: str, language: str,
@@ -141,8 +154,11 @@ def submit_application(cv: CVData, url: str, language: str,
     tmp.write(pdf_bytes)
     tmp.close()
 
-    driver: BrowserDriver = make_driver(headed)
+    # make_driver is inside the try so a browser-launch failure returns a clean
+    # "failed" status AND still runs the finally that unlinks the temp PDF.
+    driver: BrowserDriver | None = None
     try:
+        driver = make_driver(headed)
         driver.goto(url)
         html = driver.content()
         is_login, schema = _page_state(html)
@@ -168,5 +184,6 @@ def submit_application(cv: CVData, url: str, language: str,
         logger.warning("submit failed for %s: %s", url, exc)
         return {"status": "failed", "reason": str(exc)}
     finally:
-        driver.close()
+        if driver is not None:
+            driver.close()
         Path(tmp.name).unlink(missing_ok=True)

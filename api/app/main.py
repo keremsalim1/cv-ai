@@ -2,6 +2,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from app.routers import apply as apply_router
 from app.routers import ats as ats_router
 from app.routers import cv as cv_router
 from app.routers import job as job_router
@@ -34,3 +35,4 @@ app.include_router(cv_router.router)
 app.include_router(job_router.router)
 app.include_router(score_router.router)
 app.include_router(ats_router.router)
+app.include_router(apply_router.router)

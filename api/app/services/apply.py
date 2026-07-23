@@ -109,3 +109,64 @@ def prepare_application(cv: CVData, url: str, language: str, headed: bool,
         }
     finally:
         driver.close()
+
+
+def _fill_form(driver: BrowserDriver, schema: FormSchema,
+               answers: list[FieldAnswer], pdf_path: str) -> None:
+    values = {a.field_id: a.value for a in answers}
+    for field in schema.fields:
+        if field.type == "file":
+            driver.set_files(field.selector, pdf_path)
+            continue
+        value = values.get(field.id, "")
+        if not value:
+            continue
+        if field.type in ("text", "textarea"):
+            driver.fill(field.selector, value)
+        elif field.type == "select":
+            driver.select_by_label(field.selector, value)
+        elif field.type == "radio":
+            if value in field.options:
+                driver.click(field.option_selectors[field.options.index(value)])
+        elif field.type == "checkbox":
+            if value.lower() in ("yes", "true", "on", "evet", "1"):
+                driver.click(field.selector)
+
+
+def submit_application(cv: CVData, url: str, language: str,
+                       answers: list[FieldAnswer], headed: bool,
+                       make_driver) -> dict:
+    pdf_bytes = ats.render_pdf(cv, language)
+    tmp = tempfile.NamedTemporaryFile(suffix=".pdf", delete=False)
+    tmp.write(pdf_bytes)
+    tmp.close()
+
+    driver: BrowserDriver = make_driver(headed)
+    try:
+        driver.goto(url)
+        html = driver.content()
+        is_login, schema = _page_state(html)
+        if headed and (is_login or not schema.fields):
+            html, schema = _wait_for_login(driver)
+            is_login = detect_login(html)
+        if detect_captcha(html):
+            return {"status": "captcha"}
+        if is_login:
+            return {"status": "login_required"}
+        if not schema.fields:
+            return {"status": "failed", "reason": "form_not_found"}
+
+        _fill_form(driver, schema, answers, tmp.name)
+        if schema.submit_selector:
+            driver.click(schema.submit_selector)
+        else:
+            return {"status": "failed", "reason": "no_submit_button"}
+        driver.wait(3_000)
+        shot = base64.b64encode(driver.screenshot()).decode()
+        return {"status": "submitted", "screenshot": shot}
+    except Exception as exc:  # site quirks must not become a 500
+        logger.warning("submit failed for %s: %s", url, exc)
+        return {"status": "failed", "reason": str(exc)}
+    finally:
+        driver.close()
+        Path(tmp.name).unlink(missing_ok=True)

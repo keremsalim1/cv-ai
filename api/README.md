@@ -7,6 +7,7 @@ Uses Google Gemini (via its OpenAI-compatible endpoint) for the LLM work.
 ## Setup
     python -m venv .venv
     .venv\Scripts\pip install -r requirements.txt
+    .venv\Scripts\playwright install chromium   # for /apply automation
 
 Create a `.env` file in this directory:
 

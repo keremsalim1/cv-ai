@@ -75,6 +75,28 @@ def test_prepare_form_not_found(client, auth_headers):
     assert r.json()["status"] == "form_not_found"
 
 
+def test_prepare_login_required_does_not_consume_credit(client, auth_headers):
+    from app.services.usage import usage_store
+    _use_driver(FakeDriver([_html("login_wall.html")]))
+    r = client.post("/apply/prepare", headers=auth_headers, json={
+        "cv": json.loads(SAMPLE_CV_JSON), "url": "https://x.com", "language": "tr",
+    })
+    assert r.json()["status"] == "login_required"
+    # no LLM call happened, so the daily counter must stay empty
+    assert sum(usage_store._counts.values()) == 0
+
+
+def test_prepare_ready_consumes_one_credit(client, auth_headers):
+    from app.services.usage import usage_store
+    _use_driver(FakeDriver([_html("greenhouse_like.html")]))
+    override_llm([PREPARE_OUT])
+    r = client.post("/apply/prepare", headers=auth_headers, json={
+        "cv": json.loads(SAMPLE_CV_JSON), "url": "https://x.com", "language": "en",
+    })
+    assert r.json()["status"] == "ready"
+    assert sum(usage_store._counts.values()) == 1
+
+
 def test_prepare_headed_waits_for_login(client, auth_headers):
     # first snapshot: login wall; second: the real form (user logged in meanwhile)
     driver = _use_driver(FakeDriver([_html("login_wall.html"), _html("greenhouse_like.html")]))

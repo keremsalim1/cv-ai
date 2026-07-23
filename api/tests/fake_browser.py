@@ -8,6 +8,7 @@ class FakeDriver:
         self.fills: list[tuple[str, str]] = []
         self.selects: list[tuple[str, str]] = []
         self.clicks: list[str] = []
+        self.checks: list[tuple[str, bool]] = []
         self.files: list[tuple[str, str]] = []
         self.closed = False
 
@@ -25,6 +26,9 @@ class FakeDriver:
 
     def click(self, xpath):
         self.clicks.append(xpath)
+
+    def set_checked(self, xpath, checked):
+        self.checks.append((xpath, checked))
 
     def set_files(self, xpath, path):
         self.files.append((xpath, path))

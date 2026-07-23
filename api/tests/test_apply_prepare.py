@@ -59,20 +59,32 @@ def test_prepare_login_required(client, auth_headers):
 
 def test_prepare_captcha(client, auth_headers):
     _use_driver(FakeDriver([_html("captcha_page.html")]))
+    override_llm([PREPARE_OUT])
     r = client.post("/apply/prepare", headers=auth_headers, json={
         "cv": json.loads(SAMPLE_CV_JSON), "url": "https://x.com", "language": "tr",
     })
     assert r.status_code == 200
-    assert r.json()["status"] == "captcha"
+    body = r.json()
+    assert body["status"] == "captcha"
+    # captcha still optimizes so delivery mode has content
+    assert body["cv"]["full_name"] == "Ada Lovelace"
+    assert body["cover_letter"].startswith("I am excited")
+    assert any(f["id"] == "full_name" for f in body["form"])
 
 
 def test_prepare_form_not_found(client, auth_headers):
     _use_driver(FakeDriver(["<html><body><h1>Job</h1><p>" + "desc " * 60 + "</p></body></html>"]))
+    override_llm([PREPARE_OUT])
     r = client.post("/apply/prepare", headers=auth_headers, json={
         "cv": json.loads(SAMPLE_CV_JSON), "url": "https://x.com", "language": "tr",
     })
     assert r.status_code == 200
-    assert r.json()["status"] == "form_not_found"
+    body = r.json()
+    assert body["status"] == "form_not_found"
+    assert body["form"] == []
+    # no form, but the optimized CV + cover letter are still delivered
+    assert body["cv"]["full_name"] == "Ada Lovelace"
+    assert body["cover_letter"].startswith("I am excited")
 
 
 def test_prepare_login_required_does_not_consume_credit(client, auth_headers):

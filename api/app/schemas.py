@@ -55,3 +55,18 @@ class EvaluationResult(BaseModel):
     strengths: list[str] = []
     gaps: list[str] = []
     suggestions: list[str] = []
+
+
+class FormField(BaseModel):
+    id: str                      # stable key: name attr, else label slug, else field-N
+    selector: str                # absolute XPath of the element
+    label: str
+    type: str                    # text | textarea | select | radio | checkbox | file
+    options: list[str] = []      # visible labels (select options / radio choices)
+    option_selectors: list[str] = []  # XPath per option (radio only; parallel to options)
+    required: bool = False
+
+
+class FormSchema(BaseModel):
+    fields: list[FormField] = []
+    submit_selector: str | None = None

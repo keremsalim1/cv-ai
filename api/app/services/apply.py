@@ -88,15 +88,20 @@ def prepare_application(cv: CVData, url: str, language: str, headed: bool,
         if headed and (is_login or not schema.fields):
             html, schema = _wait_for_login(driver)
             is_login = detect_login(html)
-        if detect_captcha(html):
-            return {"status": "captcha", "job_text": _job_text(html)}
+        # A login wall means the page isn't visible yet — we can't optimize it.
         if is_login:
             return {"status": "login_required"}
-        if not schema.fields:
-            return {"status": "form_not_found", "job_text": _job_text(html)}
 
-        # Only charge a daily AI credit once we're actually calling the LLM —
-        # login/captcha/form_not_found bail out above without touching it.
+        # The page IS visible. Optimize + answer in one LLM call regardless of
+        # captcha/form presence; `status` only signals whether auto-submit works.
+        if detect_captcha(html):
+            status = "captcha"
+        elif not schema.fields:
+            status = "form_not_found"
+        else:
+            status = "ready"
+
+        # Charge one AI credit now that we're actually calling the LLM.
         enforce_limit(usage_store, user_id, get_settings().daily_ai_limit)
         job_text = _job_text(html)
         user_payload = PrepareIn(cv=cv, job_text=job_text,
@@ -104,7 +109,7 @@ def prepare_application(cv: CVData, url: str, language: str, headed: bool,
         out = llm.chat_json(MODEL_SMART, SYSTEM.format(language=language),
                             user_payload, PrepareOut)
         return {
-            "status": "ready",
+            "status": status,
             "form": [f.model_dump() for f in schema.fields],
             "cv": out.cv.model_dump(),
             "changes": out.changes,

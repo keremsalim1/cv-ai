@@ -22,6 +22,10 @@ class Settings(BaseSettings):
     supabase_jwt_secret: str = "insecure-test-secret-change-in-prod-0123456789"
     daily_ai_limit: int = 20
 
+    # Persistent Chromium profile for /apply: user logins on job sites survive
+    # between prepare/submit calls. Never stores passwords ourselves.
+    browser_profile_dir: str = ".browser-profile"
+
     model_config = {"env_file": ".env"}
 
 

@@ -21,9 +21,7 @@ it('marks the active item with aria-current', () => {
   expect(screen.getByRole('link', { name: /Panel/ })).not.toHaveAttribute('aria-current')
 })
 
-it('shows optimize as disabled with a soon badge', () => {
+it('links optimize to /optimize', () => {
   renderWithIntl(<AppSidebar />)
-  expect(screen.queryByRole('link', { name: /Optimize/ })).toBeNull()
-  expect(screen.getByText(/Optimize & Başvur/)).toBeInTheDocument()
-  expect(screen.getByText(/yakında/)).toBeInTheDocument()
+  expect(screen.getByRole('link', { name: /Optimize & Başvur/ })).toHaveAttribute('href', '/optimize')
 })

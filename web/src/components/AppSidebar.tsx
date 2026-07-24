@@ -9,6 +9,7 @@ const ITEMS = [
   { href: '/dashboard', key: 'dashboard', icon: LayoutDashboard, also: ['/cv'] },
   { href: '/score', key: 'score', icon: Target, also: [] },
   { href: '/ats', key: 'ats', icon: FileOutput, also: [] },
+  { href: '/optimize', key: 'optimize', icon: Send, also: [] },
 ] as const
 
 export function AppSidebar() {
@@ -43,16 +44,6 @@ export function AppSidebar() {
           </Link>
         )
       })}
-      <span
-        aria-disabled
-        className="flex shrink-0 cursor-not-allowed items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground/50"
-      >
-        <Send aria-hidden className="size-4" />
-        {t('optimize')}
-        <span className="rounded-full bg-muted px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider">
-          {t('soon')}
-        </span>
-      </span>
     </nav>
   )
 }

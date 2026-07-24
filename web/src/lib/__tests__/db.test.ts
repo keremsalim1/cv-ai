@@ -1,5 +1,5 @@
 import { vi } from 'vitest'
-import { findEvaluation, insertCv, listCvs } from '@/lib/db'
+import { findEvaluation, insertApplication, insertCv, listApplications, listCvs } from '@/lib/db'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 // Chainable stub: every method returns the stub; awaiting it resolves `result`.
@@ -44,4 +44,21 @@ it('findEvaluation filters by cv and job and can return null', async () => {
 it('throws on supabase error', async () => {
   const { sb } = stubClient({ data: null, error: new Error('db down') })
   await expect(listCvs(sb)).rejects.toThrow('db down')
+})
+
+it('listApplications queries applications newest first', async () => {
+  const rows = [{ id: 'a1' }]
+  const { sb, from, q } = stubClient({ data: rows, error: null })
+  await expect(listApplications(sb)).resolves.toEqual(rows)
+  expect(from).toHaveBeenCalledWith('applications')
+  expect(q.order).toHaveBeenCalledWith('created_at', { ascending: false })
+})
+
+it('insertApplication returns the inserted row', async () => {
+  const row = { id: 'a2' }
+  const { sb } = stubClient({ data: row, error: null })
+  await expect(insertApplication(sb, {
+    user_id: 'u1', cv_id: 'c1', optimized_cv_id: 'c2', url: 'https://x', job_text: null,
+    cover_letter: null, qa: {}, changes: [], status: 'delivered',
+  })).resolves.toEqual(row)
 })

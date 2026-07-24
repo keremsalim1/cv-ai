@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/client'
-import type { CVData, EvaluationResult, JobCriteria, JobFetchResult } from '@/types/api'
+import type { CVData, EvaluationResult, FieldAnswer, JobCriteria, JobFetchResult, PrepareResult, SubmitResult } from '@/types/api'
 
 export class ApiError extends Error {
   constructor(public code: string, public status: number) {
@@ -82,4 +82,30 @@ export async function atsPdf(cv: CVData, language: string): Promise<Blob> {
     })
   )
   return res.blob()
+}
+
+export async function applyPrepare(
+  cv: CVData, url: string, language: string, headed = false
+): Promise<PrepareResult> {
+  const res = await ensureOk(
+    await fetch(apiUrl('/apply/prepare'), {
+      method: 'POST',
+      headers: { ...(await authHeaders()), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cv, url, language, headed }),
+    })
+  )
+  return res.json()
+}
+
+export async function applySubmit(
+  cv: CVData, url: string, language: string, answers: FieldAnswer[], headed = false
+): Promise<SubmitResult> {
+  const res = await ensureOk(
+    await fetch(apiUrl('/apply/submit'), {
+      method: 'POST',
+      headers: { ...(await authHeaders()), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cv, url, language, answers, headed }),
+    })
+  )
+  return res.json()
 }

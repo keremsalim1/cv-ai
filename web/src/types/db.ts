@@ -41,3 +41,18 @@ export interface EvaluationRow {
   created_at: string
 }
 export type NewEvaluation = Omit<EvaluationRow, 'id' | 'created_at'>
+
+export interface ApplicationRow {
+  id: string
+  user_id: string
+  cv_id: string | null
+  optimized_cv_id: string | null
+  url: string
+  job_text: string | null
+  cover_letter: string | null
+  qa: unknown
+  changes: string[]
+  status: 'submitted' | 'delivered' | 'failed'
+  created_at: string
+}
+export type NewApplication = Omit<ApplicationRow, 'id' | 'created_at'>

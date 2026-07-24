@@ -47,6 +47,12 @@ def extract_form(page_html: str) -> FormSchema:
     forms = doc.xpath("//form")
     best, best_count = None, 0
     for form in forms:
+        # A form with a password field is a sign-in / create-account form, not
+        # the job application form. Skipping it keeps a login widget (common in
+        # page headers, even after login) from being mistaken for the form and
+        # lets the real application form win.
+        if form.xpath(".//input[@type='password']"):
+            continue
         count = len(form.xpath(
             ".//input[not(@type='hidden')] | .//textarea | .//select"))
         if count > best_count:

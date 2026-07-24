@@ -19,6 +19,10 @@ logger = logging.getLogger(__name__)
 
 LOGIN_WAIT_SECONDS = 180
 LOGIN_POLL_SECONDS = 2
+# Below this many characters of readable page text we treat the page as a bare
+# login gate (nothing to optimize from); above it we optimize + deliver even if
+# the page also offers a sign-in, so an optional login never blocks the user.
+MIN_JOB_TEXT = 200
 
 SYSTEM = (
     "You optimize a CV for one specific job application and answer its form. "
@@ -54,20 +58,34 @@ def _job_text(html: str) -> str:
 
 
 def _page_state(html: str) -> tuple[bool, FormSchema]:
-    """(is_login_wall, form). A password field ALWAYS means login wall — a
-    login form's surviving fields must never be mistaken for the application
-    form (password inputs are filtered out of extract_form)."""
-    return detect_login(html), extract_form(html)
+    """(is_login_wall, form). A login wall blocks us ONLY when there is no
+    application form to fill: a password field alongside a real form (or a
+    header sign-in widget) is an *optional* login, not a wall."""
+    schema = extract_form(html)
+    return (detect_login(html) and not schema.fields), schema
 
 
 def _wait_for_login(driver: BrowserDriver) -> tuple[str, FormSchema]:
-    """Headed mode: user is logging in by hand; poll until the login wall is
-    gone and an application form appears (or the wait times out)."""
-    deadline = time.monotonic() + LOGIN_WAIT_SECONDS
+    """Headed mode: the user is signing in by hand. Poll until an application
+    form appears OR the login wall clears (or the wait times out), so we never
+    hang once the user is through."""
+    start = time.monotonic()
+    deadline = start + LOGIN_WAIT_SECONDS
+    logger.warning("[apply] wait_for_login: polling up to %ss", LOGIN_WAIT_SECONDS)
     while True:
         html = driver.content()
-        is_login, schema = _page_state(html)
-        if (schema.fields and not is_login) or time.monotonic() > deadline:
+        schema = extract_form(html)
+        raw_login = detect_login(html)
+        elapsed = time.monotonic() - start
+        if schema.fields or not raw_login:
+            logger.warning("[apply] wait_for_login: proceeding after %.0fs "
+                           "(login=%s, fields=%d)", elapsed, raw_login,
+                           len(schema.fields))
+            return html, schema
+        if time.monotonic() > deadline:
+            logger.warning("[apply] wait_for_login: TIMED OUT after %.0fs "
+                           "(login=%s, fields=%d)", elapsed, raw_login,
+                           len(schema.fields))
             return html, schema
         time.sleep(LOGIN_POLL_SECONDS)
 
@@ -85,14 +103,24 @@ def prepare_application(cv: CVData, url: str, language: str, headed: bool,
         driver.goto(url)
         html = driver.content()
         is_login, schema = _page_state(html)
+        logger.warning("[apply] prepare url=%s headed=%s initial is_login=%s "
+                       "fields=%d captcha=%s", url, headed, is_login,
+                       len(schema.fields), detect_captcha(html))
         if headed and (is_login or not schema.fields):
             html, schema = _wait_for_login(driver)
-            is_login = detect_login(html)
-        # A login wall means the page isn't visible yet — we can't optimize it.
-        if is_login:
+            is_login, schema = _page_state(html)
+
+        # Only a BARE login wall — a sign-in page with no form and no readable
+        # posting — forces the user to log in. If we can read the job (even when
+        # the page also shows an optional sign-in, like Siemens/Avature portals),
+        # we optimize and deliver instead of looping on login.
+        job_text = _job_text(html)
+        if is_login and len(job_text) < MIN_JOB_TEXT:
+            logger.warning("[apply] prepare url=%s -> login_required "
+                           "(bare login wall, job_text=%d)", url, len(job_text))
             return {"status": "login_required"}
 
-        # The page IS visible. Optimize + answer in one LLM call regardless of
+        # The page IS usable. Optimize + answer in one LLM call regardless of
         # captcha/form presence; `status` only signals whether auto-submit works.
         if detect_captcha(html):
             status = "captcha"
@@ -103,7 +131,6 @@ def prepare_application(cv: CVData, url: str, language: str, headed: bool,
 
         # Charge one AI credit now that we're actually calling the LLM.
         enforce_limit(usage_store, user_id, get_settings().daily_ai_limit)
-        job_text = _job_text(html)
         user_payload = PrepareIn(cv=cv, job_text=job_text,
                                  form=schema.fields).model_dump_json()
         out = llm.chat_json(MODEL_SMART, SYSTEM.format(language=language),

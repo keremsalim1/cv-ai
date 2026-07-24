@@ -16,6 +16,7 @@ import { CvSelect } from '@/components/CvSelect'
 import { ProgressBar } from '@/components/ProgressBar'
 import { ApprovalScreen } from '@/components/apply/ApprovalScreen'
 import { ResultScreen } from '@/components/apply/ResultScreen'
+import { RecentApplications } from '@/components/apply/RecentApplications'
 import { Button, buttonVariants } from '@/components/ui/button'
 
 type Step = 'form' | 'preparing' | 'login' | 'approve' | 'submitting' | 'result'
@@ -145,6 +146,7 @@ function OptimizePageInner() {
           <Link href="/dashboard" className={cn(buttonVariants({ size: 'sm' }))}>{t('nav.dashboard')}</Link>
         </div>
       ) : step === 'form' ? (
+        <>
         <div className="flex flex-col gap-4 rounded-2xl bg-card p-6 ring-1 ring-foreground/10">
           <CvSelect cvs={cvs} value={selected} onChange={setSelected} />
           <label className="flex flex-col gap-1.5 text-sm font-medium text-foreground">
@@ -168,6 +170,8 @@ function OptimizePageInner() {
             {t('optimize.prepare')}
           </Button>
         </div>
+        <RecentApplications supabase={supabase} />
+        </>
       ) : step === 'preparing' ? (
         <ProgressBar label={t(preparingLabel)} />
       ) : step === 'login' ? (

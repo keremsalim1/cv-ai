@@ -25,7 +25,7 @@ const CVS: CvRow[] = [{
   },
 }]
 
-vi.mock('@/lib/db', () => ({ listCvs: vi.fn(async () => CVS), insertCv: vi.fn(async () => ({ id: 'opt' })), insertApplication: vi.fn(async () => ({ id: 'app' })) }))
+vi.mock('@/lib/db', () => ({ listCvs: vi.fn(async () => CVS), insertCv: vi.fn(async () => ({ id: 'opt' })), insertApplication: vi.fn(async () => ({ id: 'app' })), listApplications: vi.fn(async () => []) }))
 vi.mock('@/lib/applications', () => ({ saveApplication: vi.fn(async () => {}) }))
 vi.mock('@/lib/api', async (importOriginal) => {
   const orig = await importOriginal<typeof import('@/lib/api')>()

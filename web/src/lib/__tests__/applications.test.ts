@@ -2,8 +2,8 @@ import { vi } from 'vitest'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 const upload = vi.fn(async () => ({ error: null }))
-const insertCv = vi.fn(async () => ({ id: 'opt-cv' }))
-const insertApplication = vi.fn(async () => ({ id: 'app-1' }))
+const insertCv = vi.fn(async (..._a: unknown[]) => ({ id: 'opt-cv' }))
+const insertApplication = vi.fn(async (..._a: unknown[]) => ({ id: 'app-1' }))
 vi.mock('@/lib/db', () => ({ insertCv: (...a: unknown[]) => insertCv(...a), insertApplication: (...a: unknown[]) => insertApplication(...a) }))
 
 import { saveApplication } from '@/lib/applications'

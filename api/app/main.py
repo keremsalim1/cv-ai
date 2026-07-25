@@ -1,3 +1,5 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -9,7 +11,15 @@ from app.routers import job as job_router
 from app.routers import score as score_router
 from app.services.llm import LLMError
 
-app = FastAPI(title="KRESUME.ai API")
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    yield
+    # Assisted-apply sessions own real browser processes; never leak them.
+    from app.services.session import session_manager
+    session_manager.close_all()
+
+
+app = FastAPI(title="KRESUME.ai API", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,

@@ -3,9 +3,10 @@ from pydantic import BaseModel
 
 from app.auth import get_current_user
 from app.schemas import CVData, FieldAnswer
-from app.services.apply import prepare_application, submit_application
+from app.services.apply import assist_fill, prepare_application, submit_application
 from app.services.browser import get_driver_factory
 from app.services.llm import LLMClient, get_llm
+from app.services.session import get_session_factory, session_manager
 
 router = APIRouter(prefix="/apply", tags=["apply"])
 
@@ -46,3 +47,49 @@ def submit(
 ):
     return submit_application(req.cv, req.url, req.language, req.answers,
                               req.headed, make_driver)
+
+
+# --- Assisted apply: a persistent headed browser the user drives themselves ---
+
+
+class AssistStartRequest(BaseModel):
+    url: str
+
+
+@router.post("/assist/start")
+def assist_start(
+    req: AssistStartRequest,
+    user_id: str = Depends(get_current_user),
+    make_session=Depends(get_session_factory),
+):
+    sid = session_manager.start(make_session, req.url, user_id)
+    return {"session_id": sid}
+
+
+class AssistFillRequest(BaseModel):
+    session_id: str
+    cv: CVData
+    language: str = "tr"
+
+
+@router.post("/assist/fill")
+def assist_fill_route(
+    req: AssistFillRequest,
+    user_id: str = Depends(get_current_user),
+    llm: LLMClient = Depends(get_llm),
+):
+    session = session_manager.get(req.session_id, user_id)
+    return assist_fill(session, req.cv, req.language, llm, user_id)
+
+
+class AssistCloseRequest(BaseModel):
+    session_id: str
+
+
+@router.post("/assist/close")
+def assist_close(
+    req: AssistCloseRequest,
+    user_id: str = Depends(get_current_user),
+):
+    session_manager.close(req.session_id, user_id)
+    return {"ok": True}

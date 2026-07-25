@@ -60,6 +60,44 @@ def test_assist_fill_fills_and_charges_one_credit(client, auth_headers):
     assert sum(usage_store._counts.values()) == 1
 
 
+LINKS_HTML = (
+    "<html><body><h1>Apply</h1><form>"
+    "<label>LinkedIn URL<input name='linkedin' id='li'></label>"
+    "<label>GitHub URL<input name='github' id='gh'></label>"
+    "<label>Portfolio URL<input name='portfolio' id='pf'></label>"
+    "<button type='submit'>Send</button></form></body></html>"
+)
+
+
+def test_assist_fill_answers_profile_link_fields_from_the_cv(client, auth_headers):
+    # Lever/Greenhouse ask for these on nearly every form; they must come
+    # straight from the CV instead of being left blank for the user.
+    driver = FakeDriver([LINKS_HTML])
+    _use_session(driver)
+    fake = override_llm([json.dumps({"answers": [
+        {"field_id": "linkedin", "value": "https://linkedin.com/in/ada"},
+        {"field_id": "github", "value": "https://github.com/ada"},
+        {"field_id": "portfolio", "value": "https://ada.dev"},
+    ]})])
+    cv = json.loads(SAMPLE_CV_JSON)
+    cv["linkedin"] = "https://linkedin.com/in/ada"
+    cv["github"] = "https://github.com/ada"
+    cv["website"] = "https://ada.dev"
+    sid = _start(client, auth_headers)
+    r = client.post("/apply/assist/fill", headers=auth_headers,
+                    json={"session_id": sid, "cv": cv, "language": "en"})
+    assert r.status_code == 200
+    filled = dict(driver.fills)
+    assert filled['//*[@id="li"]'] == "https://linkedin.com/in/ada"
+    assert filled['//*[@id="gh"]'] == "https://github.com/ada"
+    assert filled['//*[@id="pf"]'] == "https://ada.dev"
+    # the links must actually reach the model, not just the form
+    sent = json.loads(fake.calls[0]["messages"][1]["content"])
+    assert sent["cv"]["linkedin"] == "https://linkedin.com/in/ada"
+    assert sent["cv"]["github"] == "https://github.com/ada"
+    assert sent["cv"]["website"] == "https://ada.dev"
+
+
 def test_assist_fill_survives_a_locked_temp_pdf(client, auth_headers, monkeypatch):
     # The assisted browser stays open and keeps the uploaded PDF locked (Windows),
     # so deleting it right after the fill fails. A successful fill must still be

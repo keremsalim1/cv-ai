@@ -35,7 +35,8 @@ SYSTEM = (
     "emphasize. changes = short user-facing list of what you altered. "
     "cover_letter: always write one, first person, active voice, grounded in "
     "the CV and the posting. answers: one per form field except type=file; "
-    "identity fields (name/email/phone/location) come from the CV; for "
+    "identity fields (name/email/phone/location, and the LinkedIn/GitHub/"
+    "portfolio URLs from cv.linkedin/cv.github/cv.website) come from the CV; for "
     "select/radio pick EXACTLY one option verbatim from options; if the CV "
     "lacks the information, use value \"\" so the user fills it. "
     "Answer in language: {language}."
@@ -54,7 +55,9 @@ ASSIST_SYSTEM = (
     "Input JSON: cv, job_text, form (fields with id/label/type/options). "
     'Respond ONLY with JSON: {{"answers": [{{"field_id": str, "value": str}}]}}. '
     "One answer per field except type=file. Identity fields "
-    "(name/email/phone/location) come from the CV. For select/radio pick EXACTLY "
+    "(name/email/phone/location) come from the CV. A field asking for a "
+    "LinkedIn, GitHub or portfolio/website URL is answered from cv.linkedin, "
+    "cv.github and cv.website respectively. For select/radio pick EXACTLY "
     "one option verbatim from options. If the CV lacks the info, use value \"\" so "
     "the user fills it. NEVER invent facts. Answer in language: {language}."
 )

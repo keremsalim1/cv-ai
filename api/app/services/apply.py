@@ -12,7 +12,8 @@ from app.schemas import CVData, FieldAnswer, FormField, FormSchema
 from app.services import ats
 from app.services.browser import BrowserDriver
 from app.services.llm import MODEL_SMART, LLMClient
-from app.services.page_analysis import detect_captcha, detect_login, extract_form
+from app.services.page_analysis import (detect_captcha, detect_login,
+                                        extract_form, form_debug)
 from app.services.usage import enforce_limit, usage_store
 
 logger = logging.getLogger(__name__)
@@ -249,6 +250,8 @@ def assist_fill(session, cv: CVData, language: str,
     html = session.snapshot()
     schema = extract_form(html)
     if not schema.fields:
+        logger.warning("[assist] no_form (html=%d chars) %s",
+                       len(html), form_debug(html))
         return {"status": "no_form"}
     # Real form present: charge one credit, then answer + fill.
     enforce_limit(usage_store, user_id, get_settings().daily_ai_limit)

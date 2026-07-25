@@ -25,6 +25,10 @@ export interface CVData {
   email: string | null
   phone: string | null
   location: string | null
+  /** Profile URLs; application forms ask for these constantly. Absent on older rows. */
+  linkedin?: string | null
+  github?: string | null
+  website?: string | null
   summary: string | null
   experiences: Experience[]
   education: Education[]

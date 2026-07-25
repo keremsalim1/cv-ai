@@ -31,6 +31,11 @@ class CVData(BaseModel):
     email: str | None = None
     phone: str | None = None
     location: str | None = None
+    # Application forms ask for these on almost every posting (Lever and
+    # Greenhouse have dedicated fields), so they are part of the CV, not extras.
+    linkedin: str | None = None
+    github: str | None = None
+    website: str | None = None
     summary: str | None = None
     experiences: list[Experience] = []
     education: list[Education] = []

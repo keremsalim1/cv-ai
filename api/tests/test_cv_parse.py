@@ -13,6 +13,24 @@ def test_parse_cv_success(client, auth_headers, sample_pdf_bytes):
     assert "Python" in cv["skills"]
 
 
+def test_parse_cv_keeps_profile_links(client, auth_headers, sample_pdf_bytes):
+    # Application forms ask for LinkedIn/GitHub/portfolio URLs constantly; if the
+    # parser drops them the CV can never answer those fields.
+    import json
+    cv = json.loads(SAMPLE_CV_JSON)
+    cv["linkedin"] = "https://linkedin.com/in/ada"
+    cv["github"] = "https://github.com/ada"
+    cv["website"] = "https://ada.dev"
+    override_llm([json.dumps(cv)])
+    r = client.post("/cv/parse", headers=auth_headers,
+                    files={"file": ("cv.pdf", sample_pdf_bytes, "application/pdf")})
+    assert r.status_code == 200
+    out = r.json()["cv"]
+    assert out["linkedin"] == "https://linkedin.com/in/ada"
+    assert out["github"] == "https://github.com/ada"
+    assert out["website"] == "https://ada.dev"
+
+
 def test_parse_cv_null_degree(client, auth_headers, sample_pdf_bytes):
     # Regression: LLM returning null for an education degree used to 502.
     import json

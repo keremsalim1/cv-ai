@@ -94,3 +94,7 @@ export type SubmitResult =
   | { status: 'failed'; reason: string }
   | { status: 'login_required' }
   | { status: 'captcha' }
+
+export type AssistFillResult =
+  | { status: 'filled'; filled: { label: string; value: string }[]; field_count: number; screenshot: string }
+  | { status: 'no_form' }

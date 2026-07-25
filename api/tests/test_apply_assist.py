@@ -60,6 +60,25 @@ def test_assist_fill_fills_and_charges_one_credit(client, auth_headers):
     assert sum(usage_store._counts.values()) == 1
 
 
+def test_assist_fill_survives_a_locked_temp_pdf(client, auth_headers, monkeypatch):
+    # The assisted browser stays open and keeps the uploaded PDF locked (Windows),
+    # so deleting it right after the fill fails. A successful fill must still be
+    # reported as filled instead of surfacing as an unexpected error.
+    import app.services.apply as apply_mod
+
+    def locked(self, missing_ok=False):
+        raise PermissionError(32, "file in use by another process")
+
+    monkeypatch.setattr(apply_mod.Path, "unlink", locked)
+    _use_session(FakeDriver([FORM_HTML]))
+    override_llm([ASSIST_OUT])
+    sid = _start(client, auth_headers)
+    r = client.post("/apply/assist/fill", headers=auth_headers,
+                    json={"session_id": sid, "cv": json.loads(SAMPLE_CV_JSON), "language": "en"})
+    assert r.status_code == 200
+    assert r.json()["status"] == "filled"
+
+
 def test_assist_fill_no_form_costs_no_credit(client, auth_headers):
     from app.services.usage import usage_store
     _use_session(FakeDriver([NO_FORM_HTML]))

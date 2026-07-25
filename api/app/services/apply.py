@@ -268,7 +268,14 @@ def assist_fill(session, cv: CVData, language: str,
         session.fill_form(schema, out.answers, tmp.name)
         shot = base64.b64encode(session.screenshot()).decode()
     finally:
-        Path(tmp.name).unlink(missing_ok=True)
+        # Unlike submit_application, the assisted browser stays open, so it still
+        # holds the uploaded PDF (Windows locks it). A successful fill must not
+        # be reported as a failure over a leftover temp file.
+        try:
+            Path(tmp.name).unlink(missing_ok=True)
+        except OSError as exc:
+            logger.warning("temp PDF still held by the browser, leaving it "
+                           "to the OS temp dir: %s (%s)", tmp.name, exc)
     values = {a.field_id: a.value for a in out.answers}
     filled = [{"label": f.label, "value": values.get(f.id, "")}
               for f in schema.fields if f.type != "file"]

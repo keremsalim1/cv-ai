@@ -36,7 +36,7 @@
   - `get_session_factory()` dependency returning `Callable[[str], BrowserSession]`.
   - `FakeSession(driver)` test double (in `tests/fake_session.py`).
 
-- [ ] **Step 1: Write the failing session tests**
+- [x] **Step 1: Write the failing session tests**
 
 Create `api/tests/test_session.py`:
 
@@ -107,12 +107,12 @@ class _FakeSession:
         self.closed = True
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Run (in `api/`): `.venv\Scripts\python -m pytest tests/test_session.py -q`
 Expected: FAIL — `app.services.session` does not exist (ImportError).
 
-- [ ] **Step 3: Implement `session.py`**
+- [x] **Step 3: Implement `session.py`**
 
 Create `api/app/services/session.py`:
 
@@ -298,12 +298,12 @@ class FakeSession:
         self._driver.close()
 ```
 
-- [ ] **Step 4: Run the tests to verify they pass**
+- [x] **Step 4: Run the tests to verify they pass**
 
 Run: `.venv\Scripts\python -m pytest tests/test_session.py -q`
 Expected: PASS (3 tests).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add api/app/services/session.py api/tests/fake_session.py api/tests/test_session.py
@@ -324,7 +324,7 @@ git commit -m "feat(api): persistent browser session layer for assisted apply"
 - Consumes: `session_manager`, `get_session_factory`, `BrowserSession` from `app.services.session`; existing `extract_form`, `_job_text`, `_fill_form`, `enforce_limit`, `usage_store`, `get_settings`, `MODEL_SMART`, `LLMClient`, `ats.render_pdf`, `CVData`, `FieldAnswer`, `FormField`; `get_current_user`, `get_llm`.
 - Produces: `POST /apply/assist/start` → `{session_id}`; `POST /apply/assist/fill` → `{status:"filled", filled:[{label,value}], field_count, screenshot}` | `{status:"no_form"}`; `POST /apply/assist/close` → `{ok:true}`. Consumed by Tasks 3–5.
 
-- [ ] **Step 1: Write the failing endpoint tests**
+- [x] **Step 1: Write the failing endpoint tests**
 
 Create `api/tests/test_apply_assist.py`:
 
@@ -419,12 +419,12 @@ def test_assist_close_removes_the_session(client, auth_headers):
     assert sid not in session_manager._sessions
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Run: `.venv\Scripts\python -m pytest tests/test_apply_assist.py -q`
 Expected: FAIL — the `/apply/assist/*` routes do not exist (404), and `assist_fill` is undefined.
 
-- [ ] **Step 3: Add the assist service to `apply.py`**
+- [x] **Step 3: Add the assist service to `apply.py`**
 
 In `api/app/services/apply.py`, add after the existing `PrepareOut` class (near the top-level model definitions):
 
@@ -483,7 +483,7 @@ def assist_fill(session, cv: CVData, language: str,
 
 (No new imports needed: `base64`, `tempfile`, `Path`, `ats`, `extract_form`, `enforce_limit`, `usage_store`, `get_settings`, `MODEL_SMART`, `LLMClient`, `CVData`, `FieldAnswer`, `FormField`, `_job_text` are all already imported in `apply.py`.)
 
-- [ ] **Step 4: Add the endpoints to `routers/apply.py`**
+- [x] **Step 4: Add the endpoints to `routers/apply.py`**
 
 In `api/app/routers/apply.py`, add these imports and routes. Update the import from the service and add the session import:
 
@@ -538,7 +538,7 @@ def assist_close(
     return {"ok": True}
 ```
 
-- [ ] **Step 5: Close sessions on shutdown via `lifespan` in `main.py`**
+- [x] **Step 5: Close sessions on shutdown via `lifespan` in `main.py`**
 
 In `api/app/main.py`, add a `lifespan` handler and pass it to `FastAPI(...)` (the modern replacement for the deprecated `@app.on_event("shutdown")`). Add the import at the top:
 
@@ -561,12 +561,12 @@ app = FastAPI(title="KRESUME.ai API", lifespan=lifespan)
 
 (Replace the existing `app = FastAPI(title="KRESUME.ai API")` line.)
 
-- [ ] **Step 6: Run the tests to verify they pass**
+- [x] **Step 6: Run the tests to verify they pass**
 
 Run: `.venv\Scripts\python -m pytest tests/test_apply_assist.py -q`
 Expected: PASS (5 tests). Then the full API suite: `.venv\Scripts\python -m pytest -q` — all green.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add api/app/services/apply.py api/app/routers/apply.py api/app/main.py api/tests/test_apply_assist.py
@@ -590,7 +590,7 @@ git commit -m "feat(api): assisted apply endpoints (start/fill/close) with per-f
   - `assistFill(sessionId: string, cv: CVData, language: string): Promise<AssistFillResult>`
   - `assistClose(sessionId: string): Promise<void>`
 
-- [ ] **Step 1: Append the type**
+- [x] **Step 1: Append the type**
 
 Append to `web/src/types/api.ts`:
 
@@ -600,7 +600,7 @@ export type AssistFillResult =
   | { status: 'no_form' }
 ```
 
-- [ ] **Step 2: Append the failing api-client tests**
+- [x] **Step 2: Append the failing api-client tests**
 
 Append to `web/src/lib/__tests__/api.test.ts`:
 
@@ -637,12 +637,12 @@ it('assistClose posts the session id', async () => {
 })
 ```
 
-- [ ] **Step 3: Run the tests to verify they fail**
+- [x] **Step 3: Run the tests to verify they fail**
 
 Run (in `web/`): `npx vitest run src/lib/__tests__/api.test.ts`
 Expected: FAIL — `assistStart`/`assistFill`/`assistClose` are not exported.
 
-- [ ] **Step 4: Implement the client functions**
+- [x] **Step 4: Implement the client functions**
 
 Add `AssistFillResult` to the existing `import type ... from '@/types/api'` line in `web/src/lib/api.ts`, then append:
 
@@ -682,12 +682,12 @@ export async function assistClose(sessionId: string): Promise<void> {
 }
 ```
 
-- [ ] **Step 5: Run the tests to verify they pass**
+- [x] **Step 5: Run the tests to verify they pass**
 
 Run: `npx vitest run src/lib/__tests__/api.test.ts`
 Expected: PASS.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add web/src/types/api.ts web/src/lib/api.ts web/src/lib/__tests__/api.test.ts
@@ -708,7 +708,7 @@ git commit -m "feat(web): assist API client (start/fill/close) + AssistFillResul
 - Produces (used by Task 5): `AssistScreen` with props
   `{ result: AssistFillResult | null; busy: boolean; onFill: () => void; onFinish: () => void }`.
 
-- [ ] **Step 1: Add the i18n keys (both languages)**
+- [x] **Step 1: Add the i18n keys (both languages)**
 
 In `web/src/messages/en.json`, add these keys inside the existing `"optimize"` object (after `"statusFailed"`, adding a comma after `statusFailed`'s value):
 
@@ -740,7 +740,7 @@ In `web/src/messages/tr.json`, add the matching keys inside `"optimize"`:
 "assistFinish": "Bitir"
 ```
 
-- [ ] **Step 2: Write the failing AssistScreen test**
+- [x] **Step 2: Write the failing AssistScreen test**
 
 Create `web/src/components/apply/__tests__/AssistScreen.test.tsx`:
 
@@ -784,12 +784,12 @@ it('finish button triggers onFinish', async () => {
 })
 ```
 
-- [ ] **Step 3: Run the test to verify it fails**
+- [x] **Step 3: Run the test to verify it fails**
 
 Run: `npx vitest run "src/components/apply/__tests__/AssistScreen.test.tsx"`
 Expected: FAIL — cannot resolve `@/components/apply/AssistScreen`.
 
-- [ ] **Step 4: Implement `AssistScreen`**
+- [x] **Step 4: Implement `AssistScreen`**
 
 Create `web/src/components/apply/AssistScreen.tsx`:
 
@@ -856,12 +856,12 @@ export function AssistScreen({ result, busy, onFill, onFinish }: {
 }
 ```
 
-- [ ] **Step 5: Run the test to verify it passes**
+- [x] **Step 5: Run the test to verify it passes**
 
 Run: `npx vitest run "src/components/apply/__tests__/AssistScreen.test.tsx"`
 Expected: PASS (4 tests).
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add web/src/components/apply/AssistScreen.tsx web/src/components/apply/__tests__/AssistScreen.test.tsx web/src/messages/en.json web/src/messages/tr.json
@@ -881,7 +881,7 @@ git commit -m "feat(web): AssistScreen (fill-form loop + screenshot) and assist 
 - Consumes: `assistStart`, `assistFill`, `assistClose` from `@/lib/api`; `AssistScreen` from `@/components/apply/AssistScreen`; `AssistFillResult` from `@/types/api`; existing `saveApplication`, `atsPdf`, `ApprovalScreen`, `ResultScreen`.
 - Produces: the `assist` step on `/optimize`; `ApprovalScreen` gains an optional assisted-apply button.
 
-- [ ] **Step 1: Add the optional `onAssist` button to `ApprovalScreen`**
+- [x] **Step 1: Add the optional `onAssist` button to `ApprovalScreen`**
 
 In `web/src/components/apply/ApprovalScreen.tsx`, add `onAssist` to the props type and render it as the primary button in delivery mode. Change the component signature and the button row.
 
@@ -926,7 +926,7 @@ Replace the button row (`<div className="flex flex-wrap gap-3">…</div>`) with:
       </div>
 ```
 
-- [ ] **Step 2: Append the failing page test**
+- [x] **Step 2: Append the failing page test**
 
 Append to `web/src/app/(app)/optimize/__tests__/page.test.tsx`. First extend the `@/lib/api` mock to include the assist functions — replace the existing `vi.mock('@/lib/api', …)` block with:
 
@@ -970,12 +970,12 @@ it('form_not_found → assisted apply: fills the live form then finishes', async
 })
 ```
 
-- [ ] **Step 3: Run the test to verify it fails**
+- [x] **Step 3: Run the test to verify it fails**
 
 Run: `npx vitest run "src/app/(app)/optimize/__tests__/page.test.tsx"`
 Expected: FAIL — no `Asistanlı başvuru` button / assist step not implemented.
 
-- [ ] **Step 4: Wire the assist step into the page**
+- [x] **Step 4: Wire the assist step into the page**
 
 In `web/src/app/(app)/optimize/page.tsx`:
 
@@ -1076,12 +1076,12 @@ type Step = 'form' | 'preparing' | 'login' | 'approve' | 'submitting' | 'assist'
         </>
 ```
 
-- [ ] **Step 5: Run the test to verify it passes**
+- [x] **Step 5: Run the test to verify it passes**
 
 Run: `npx vitest run "src/app/(app)/optimize/__tests__/page.test.tsx"`
 Expected: PASS (all page tests, including the new assisted-apply test).
 
-- [ ] **Step 6: Full verification**
+- [x] **Step 6: Full verification**
 
 Run (in `web/`):
 - `npm test` — all green (includes message parity).
@@ -1090,7 +1090,7 @@ Run (in `web/`):
 
 Run (in `api/`): `.venv\Scripts\python -m pytest -q` — all green.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add "web/src/components/apply/ApprovalScreen.tsx" "web/src/app/(app)/optimize/page.tsx" "web/src/app/(app)/optimize/__tests__/page.test.tsx"

@@ -48,6 +48,27 @@ class PrepareOut(BaseModel):
     answers: list[FieldAnswer] = []
 
 
+ASSIST_SYSTEM = (
+    "You fill ONE page of a job application form from a CV. "
+    "Input JSON: cv, job_text, form (fields with id/label/type/options). "
+    'Respond ONLY with JSON: {{"answers": [{{"field_id": str, "value": str}}]}}. '
+    "One answer per field except type=file. Identity fields "
+    "(name/email/phone/location) come from the CV. For select/radio pick EXACTLY "
+    "one option verbatim from options. If the CV lacks the info, use value \"\" so "
+    "the user fills it. NEVER invent facts. Answer in language: {language}."
+)
+
+
+class AssistIn(BaseModel):
+    cv: CVData
+    job_text: str
+    form: list[FormField]
+
+
+class AnswersOut(BaseModel):
+    answers: list[FieldAnswer] = []
+
+
 def _job_text(html: str) -> str:
     text = trafilatura.extract(html)
     if text:
@@ -219,3 +240,34 @@ def submit_application(cv: CVData, url: str, language: str,
         if driver is not None:
             driver.close()
         Path(tmp.name).unlink(missing_ok=True)
+
+
+def assist_fill(session, cv: CVData, language: str,
+                llm: LLMClient, user_id: str) -> dict:
+    """Fill the CURRENT live page of an assisted session. Reads whatever the
+    user navigated to; if there's a fillable form, answers its real fields."""
+    html = session.snapshot()
+    schema = extract_form(html)
+    if not schema.fields:
+        return {"status": "no_form"}
+    # Real form present: charge one credit, then answer + fill.
+    enforce_limit(usage_store, user_id, get_settings().daily_ai_limit)
+    job_text = _job_text(html)
+    user_payload = AssistIn(cv=cv, job_text=job_text,
+                            form=schema.fields).model_dump_json()
+    out = llm.chat_json(MODEL_SMART, ASSIST_SYSTEM.format(language=language),
+                        user_payload, AnswersOut)
+    pdf_bytes = ats.render_pdf(cv, language)
+    tmp = tempfile.NamedTemporaryFile(suffix=".pdf", delete=False)
+    tmp.write(pdf_bytes)
+    tmp.close()
+    try:
+        session.fill_form(schema, out.answers, tmp.name)
+        shot = base64.b64encode(session.screenshot()).decode()
+    finally:
+        Path(tmp.name).unlink(missing_ok=True)
+    values = {a.field_id: a.value for a in out.answers}
+    filled = [{"label": f.label, "value": values.get(f.id, "")}
+              for f in schema.fields if f.type != "file"]
+    return {"status": "filled", "filled": filled,
+            "field_count": len(schema.fields), "screenshot": shot}

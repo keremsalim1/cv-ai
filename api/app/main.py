@@ -1,3 +1,4 @@
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
@@ -10,6 +11,21 @@ from app.routers import cv as cv_router
 from app.routers import job as job_router
 from app.routers import score as score_router
 from app.services.llm import LLMError
+
+# Warnings (LLM retries, apply/login diagnostics) also go to a file: the reason
+# a request failed must survive the terminal scrolling away.
+_log_file = logging.FileHandler("api.log", encoding="utf-8")
+logging.basicConfig(
+    level=logging.WARNING,
+    format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+    handlers=[logging.StreamHandler(), _log_file],
+    force=True,
+)
+# uvicorn's loggers don't propagate, so unhandled-exception tracebacks would
+# otherwise only ever reach the terminal.
+_log_file.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s"))
+logging.getLogger("uvicorn.error").addHandler(_log_file)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

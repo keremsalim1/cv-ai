@@ -29,10 +29,13 @@ vi.mock('@/lib/db', () => ({ listCvs: vi.fn(async () => CVS), insertCv: vi.fn(as
 vi.mock('@/lib/applications', () => ({ saveApplication: vi.fn(async () => {}) }))
 vi.mock('@/lib/api', async (importOriginal) => {
   const orig = await importOriginal<typeof import('@/lib/api')>()
-  return { ...orig, applyPrepare: vi.fn(), applySubmit: vi.fn(), atsPdf: vi.fn(async () => new Blob(['%PDF'])) }
+  return {
+    ...orig, applyPrepare: vi.fn(), applySubmit: vi.fn(), atsPdf: vi.fn(async () => new Blob(['%PDF'])),
+    assistStart: vi.fn(), assistFill: vi.fn(), assistClose: vi.fn(),
+  }
 })
 
-import { applyPrepare, applySubmit } from '@/lib/api'
+import { applyPrepare, applySubmit, assistStart, assistFill, assistClose } from '@/lib/api'
 import { saveApplication } from '@/lib/applications'
 import OptimizePage from '@/app/(app)/optimize/page'
 
@@ -75,4 +78,24 @@ it('captcha goes straight to delivery mode (no submit button)', async () => {
   await fillLinkAndPrepare()
   await screen.findByText('Başvurmadan önce inceleyin')
   expect(screen.queryByRole('button', { name: 'Onayla ve Başvur' })).toBeNull()
+})
+
+it('form_not_found → assisted apply: fills the live form then finishes', async () => {
+  ;(applyPrepare as Mock).mockResolvedValue({
+    status: 'form_not_found', form: [], cv: CVS[0].parsed_data, changes: [], cover_letter: 'cl', answers: [], job_text: 'jt',
+  })
+  ;(assistStart as Mock).mockResolvedValue({ session_id: 'sess-1' })
+  ;(assistFill as Mock).mockResolvedValue({
+    status: 'filled', field_count: 3, screenshot: 'SHOT', filled: [{ label: 'Motivasyon', value: 'X' }],
+  })
+  ;(assistClose as Mock).mockResolvedValue(undefined)
+  renderWithIntl(<OptimizePage />)
+  await fillLinkAndPrepare()
+  await userEvent.click(await screen.findByRole('button', { name: 'Asistanlı başvuru' }))
+  await userEvent.click(await screen.findByRole('button', { name: 'Formu doldur' }))
+  expect(assistFill).toHaveBeenCalledWith('sess-1', CVS[0].parsed_data, expect.any(String))
+  expect((await screen.findByRole('img') as HTMLImageElement).src).toContain('SHOT')
+  await userEvent.click(screen.getByRole('button', { name: 'Bitir' }))
+  await waitFor(() => expect(saveApplication).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ status: 'delivered' })))
+  expect(assistClose).toHaveBeenCalledWith('sess-1')
 })

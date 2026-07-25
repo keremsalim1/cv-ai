@@ -1,16 +1,17 @@
 'use client'
 import { useState } from 'react'
 import { useTranslations } from 'next-intl'
-import { Send, PackageOpen } from 'lucide-react'
+import { Send, PackageOpen, Wand2 } from 'lucide-react'
 import type { FieldAnswer, OptimizedPayload } from '@/types/api'
 import { Button } from '@/components/ui/button'
 import { FormAnswerField } from './FormAnswerField'
 
-export function ApprovalScreen({ payload, canSubmit, onSubmit, onDeliver }: {
+export function ApprovalScreen({ payload, canSubmit, onSubmit, onDeliver, onAssist }: {
   payload: OptimizedPayload
   canSubmit: boolean
   onSubmit: (answers: FieldAnswer[], coverLetter: string) => void
   onDeliver: (answers: FieldAnswer[], coverLetter: string) => void
+  onAssist?: () => void
 }) {
   const t = useTranslations('optimize')
   const [coverLetter, setCoverLetter] = useState(payload.cover_letter ?? '')
@@ -65,6 +66,12 @@ export function ApprovalScreen({ payload, canSubmit, onSubmit, onDeliver }: {
           <Button onClick={() => onSubmit(answers(), coverLetter)} className="h-11 gap-1.5 text-base">
             <Send aria-hidden className="size-4" />
             {t('submit')}
+          </Button>
+        )}
+        {onAssist && (
+          <Button onClick={onAssist} className="h-11 gap-1.5 text-base">
+            <Wand2 aria-hidden className="size-4" />
+            {t('assistCta')}
           </Button>
         )}
         <Button variant="outline" onClick={() => onDeliver(answers(), coverLetter)} className="h-11 gap-1.5 text-base">

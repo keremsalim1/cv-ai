@@ -6,20 +6,21 @@ import { useLocale, useTranslations } from 'next-intl'
 import { Send, AlertCircle, LogIn } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { listCvs } from '@/lib/db'
-import { ApiError, applyPrepare, applySubmit, atsPdf } from '@/lib/api'
+import { ApiError, applyPrepare, applySubmit, assistClose, assistFill, assistStart, atsPdf } from '@/lib/api'
 import { saveApplication } from '@/lib/applications'
 import { messageKeyForCode } from '@/lib/errors'
 import { cn } from '@/lib/utils'
 import type { CvRow } from '@/types/db'
-import type { FieldAnswer, OptimizedPayload, PrepareResult } from '@/types/api'
+import type { AssistFillResult, FieldAnswer, OptimizedPayload, PrepareResult } from '@/types/api'
 import { CvSelect } from '@/components/CvSelect'
 import { ProgressBar } from '@/components/ProgressBar'
 import { ApprovalScreen } from '@/components/apply/ApprovalScreen'
+import { AssistScreen } from '@/components/apply/AssistScreen'
 import { ResultScreen } from '@/components/apply/ResultScreen'
 import { RecentApplications } from '@/components/apply/RecentApplications'
 import { Button, buttonVariants } from '@/components/ui/button'
 
-type Step = 'form' | 'preparing' | 'login' | 'approve' | 'submitting' | 'result'
+type Step = 'form' | 'preparing' | 'login' | 'approve' | 'submitting' | 'assist' | 'result'
 type ResultView = { mode: 'submitted' | 'delivered'; screenshot?: string; pdf: Blob; pdfName: string; coverLetter: string; answers: FieldAnswer[] }
 
 function pdfName(fullName: string): string {
@@ -41,6 +42,9 @@ function OptimizePageInner() {
   const [payload, setPayload] = useState<(OptimizedPayload & { status: PrepareResult['status'] }) | null>(null)
   const [result, setResult] = useState<ResultView | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [sessionId, setSessionId] = useState<string | null>(null)
+  const [assistResult, setAssistResult] = useState<AssistFillResult | null>(null)
+  const [assistBusy, setAssistBusy] = useState(false)
 
   const load = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser()
@@ -114,6 +118,48 @@ function OptimizePageInner() {
     if (payload) await finish('delivered', payload, answers, coverLetter)
   }
 
+  async function beginAssist() {
+    const cv = cvs?.find((c) => c.id === selected)
+    if (!cv || !url.trim()) return
+    // login-mode has no optimized payload; synthesize one from the selected CV
+    if (!payload) {
+      setPayload({ status: 'form_not_found', cv: cv.parsed_data, form: [],
+        changes: [], cover_letter: '', answers: [], job_text: '' })
+    }
+    setError(null)
+    setAssistResult(null)
+    setStep('assist')
+    setAssistBusy(true)
+    try {
+      const { session_id } = await assistStart(url.trim())
+      setSessionId(session_id)
+    } catch (err) {
+      showError(err)
+      setStep(payload ? 'approve' : 'login')
+    } finally {
+      setAssistBusy(false)
+    }
+  }
+
+  async function doAssistFill() {
+    if (!sessionId) return
+    const cv = payload?.cv ?? cvs!.find((c) => c.id === selected)!.parsed_data
+    setError(null)
+    setAssistBusy(true)
+    try {
+      setAssistResult(await assistFill(sessionId, cv, lang))
+    } catch (err) {
+      showError(err)
+    } finally {
+      setAssistBusy(false)
+    }
+  }
+
+  async function finishAssist() {
+    if (sessionId) { try { await assistClose(sessionId) } catch { /* already gone */ } }
+    if (payload) await finish('delivered', payload, [], payload.cover_letter ?? '')
+  }
+
   if (!cvs) {
     return (
       <main className="mx-auto w-full max-w-2xl px-5 py-12 sm:px-8">
@@ -182,6 +228,10 @@ function OptimizePageInner() {
             <LogIn aria-hidden className="size-4" />
             {t('optimize.loginButton')}
           </Button>
+          <Button variant="outline" onClick={beginAssist} className="h-11 gap-1.5 text-base">
+            <LogIn aria-hidden className="size-4" />
+            {t('optimize.assistCta')}
+          </Button>
         </div>
       ) : step === 'submitting' ? (
         <ProgressBar label={t('optimize.submitting')} />
@@ -191,7 +241,19 @@ function OptimizePageInner() {
           {payload.status !== 'ready' && (
             <p className="rounded-lg bg-muted px-4 py-3 text-sm text-muted-foreground">{t('optimize.deliverModeNote')}</p>
           )}
-          <ApprovalScreen payload={payload} canSubmit={payload.status === 'ready'} onSubmit={onSubmit} onDeliver={onDeliver} />
+          <ApprovalScreen payload={payload} canSubmit={payload.status === 'ready'}
+            onSubmit={onSubmit} onDeliver={onDeliver}
+            onAssist={payload.status === 'ready' ? undefined : beginAssist} />
+        </>
+      ) : step === 'assist' ? (
+        <>
+          <h1 className="text-xl font-semibold text-foreground">{t('optimize.assist')}</h1>
+          {!sessionId ? (
+            <ProgressBar label={t('optimize.assistStarting')} />
+          ) : (
+            <AssistScreen result={assistResult} busy={assistBusy}
+              onFill={doAssistFill} onFinish={finishAssist} />
+          )}
         </>
       ) : step === 'result' && result ? (
         <ResultScreen {...result} />

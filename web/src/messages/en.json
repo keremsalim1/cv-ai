@@ -121,7 +121,17 @@
     "recentEmpty": "No applications yet.",
     "statusSubmitted": "Submitted",
     "statusDelivered": "Delivered",
-    "statusFailed": "Delivered (auto-submit failed)"
+    "statusFailed": "Delivered (auto-submit failed)",
+    "assistCta": "Assisted apply",
+    "assist": "Assisted apply",
+    "assistIntro": "A browser window is open. Navigate to the application form there (choose a method, sign in, advance the steps). When the form is on screen, click \"Fill form\".",
+    "assistStarting": "Opening the browser…",
+    "assistFill": "Fill form",
+    "assistFilling": "Reading the page and filling…",
+    "assistNoForm": "No form found on this page. Go to the application form in the window, then try again.",
+    "assistFilledCount": "{count} fields filled",
+    "assistReviewNote": "Review the fields in the real browser and submit there yourself. If there's another step, click \"Fill form\" again.",
+    "assistFinish": "Finish"
   },
   "errors": {
     "SCANNED_PDF": "This PDF looks scanned. Please upload a text-based PDF.",

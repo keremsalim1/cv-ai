@@ -121,7 +121,17 @@
     "recentEmpty": "Henüz başvuru yok.",
     "statusSubmitted": "Gönderildi",
     "statusDelivered": "Teslim edildi",
-    "statusFailed": "Teslim edildi (otomatik gönderim başarısız)"
+    "statusFailed": "Teslim edildi (otomatik gönderim başarısız)",
+    "assistCta": "Asistanlı başvuru",
+    "assist": "Asistanlı başvuru",
+    "assistIntro": "Bir tarayıcı penceresi açık. Başvuru formuna oradan ilerleyin (yöntem seçin, giriş yapın, adımları geçin). Form ekranda göründüğünde \"Formu doldur\"a basın.",
+    "assistStarting": "Tarayıcı açılıyor…",
+    "assistFill": "Formu doldur",
+    "assistFilling": "Sayfa okunuyor ve dolduruluyor…",
+    "assistNoForm": "Bu sayfada form bulunamadı. Penceredeki başvuru formuna gidip tekrar deneyin.",
+    "assistFilledCount": "{count} alan dolduruldu",
+    "assistReviewNote": "Alanları gerçek tarayıcıda gözden geçirip GÖNDER'e kendiniz basın. Sonraki adım varsa yine \"Formu doldur\".",
+    "assistFinish": "Bitir"
   },
   "errors": {
     "SCANNED_PDF": "Bu PDF taranmış görünüyor. Lütfen metin tabanlı bir PDF yükleyin.",

@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/client'
-import type { CVData, EvaluationResult, FieldAnswer, JobCriteria, JobFetchResult, PrepareResult, SubmitResult } from '@/types/api'
+import type { AssistFillResult, CVData, EvaluationResult, FieldAnswer, JobCriteria, JobFetchResult, PrepareResult, SubmitResult } from '@/types/api'
 
 export class ApiError extends Error {
   constructor(public code: string, public status: number) {
@@ -108,4 +108,38 @@ export async function applySubmit(
     })
   )
   return res.json()
+}
+
+export async function assistStart(url: string): Promise<{ session_id: string }> {
+  const res = await ensureOk(
+    await fetch(apiUrl('/apply/assist/start'), {
+      method: 'POST',
+      headers: { ...(await authHeaders()), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url }),
+    })
+  )
+  return res.json()
+}
+
+export async function assistFill(
+  sessionId: string, cv: CVData, language: string
+): Promise<AssistFillResult> {
+  const res = await ensureOk(
+    await fetch(apiUrl('/apply/assist/fill'), {
+      method: 'POST',
+      headers: { ...(await authHeaders()), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ session_id: sessionId, cv, language }),
+    })
+  )
+  return res.json()
+}
+
+export async function assistClose(sessionId: string): Promise<void> {
+  await ensureOk(
+    await fetch(apiUrl('/apply/assist/close'), {
+      method: 'POST',
+      headers: { ...(await authHeaders()), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ session_id: sessionId }),
+    })
+  )
 }

@@ -40,7 +40,8 @@ def test_submit_fills_and_submits(client, auth_headers):
     assert body["status"] == "submitted"
     assert base64.b64decode(body["screenshot"]).startswith(b"\x89PNG")
     filled = dict(driver.fills)
-    assert any("full_name" in sel or "input[1]" in sel for sel in filled)
+    # the full-name input is targeted by its id (<input id="fn" name="full_name">)
+    assert filled['//*[@id="fn"]'] == "Ada Lovelace"
     assert ("I love APIs." in filled.values())
     assert driver.selects and driver.selects[0][1] == "3-5"
     # radio "Yes" + submit button clicked

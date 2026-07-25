@@ -143,6 +143,8 @@
     "DAILY_LIMIT_REACHED": "Günlük AI kullanım limitine ulaştınız. Yarın tekrar deneyin.",
     "AI_UNAVAILABLE": "AI servisi şu anda yanıt vermiyor. Birazdan tekrar deneyin.",
     "NOT_AUTHENTICATED": "Oturumunuz sona erdi. Lütfen tekrar giriş yapın.",
+    "SESSION_NOT_FOUND": "Tarayıcı oturumu kapandı. Asistanlı başvuruyu yeniden başlatın.",
+    "FORBIDDEN": "Bu tarayıcı oturumu başka bir hesaba ait.",
     "UNKNOWN": "Beklenmeyen bir hata oluştu. Lütfen tekrar deneyin."
   },
   "common": {

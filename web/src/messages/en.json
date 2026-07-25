@@ -143,6 +143,8 @@
     "DAILY_LIMIT_REACHED": "You reached today's AI usage limit. Try again tomorrow.",
     "AI_UNAVAILABLE": "The AI service is not responding right now. Please retry shortly.",
     "NOT_AUTHENTICATED": "Your session expired. Please log in again.",
+    "SESSION_NOT_FOUND": "The browser session was closed. Start the assisted apply again.",
+    "FORBIDDEN": "This browser session belongs to another account.",
     "UNKNOWN": "Something went wrong. Please try again."
   },
   "common": {

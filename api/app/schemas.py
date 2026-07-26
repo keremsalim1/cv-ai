@@ -64,7 +64,8 @@ class EvaluationResult(BaseModel):
 
 class FormField(BaseModel):
     id: str                      # stable key: name attr, else label slug, else field-N
-    selector: str                # absolute XPath of the element
+    selector: str                # absolute XPath (auto flow) or CSS ref (assisted)
+    frame: int = 0               # index into page.frames; 0 is the main frame
     label: str
     type: str                    # text | textarea | select | radio | checkbox | file
     options: list[str] = []      # visible labels (select options / radio choices)

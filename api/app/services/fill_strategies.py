@@ -75,3 +75,37 @@ def fill_field(driver, field: FormField, value: str, pdf_path: str) -> FieldOutc
         logger.warning("[fill] %s (%s): %s", field.id, field.type, exc)
         return outcome("failed", str(exc))
     return outcome("filled")
+
+
+# Only these read their value back reliably. A combobox commonly stores its
+# selection in a hidden node the collector never sees, so silence about them is
+# not evidence of failure.
+VERIFIABLE_TYPES = ("text", "textarea", "date", "select")
+
+
+def fill_and_verify(driver, schema, answers, pdf_path: str) -> list[FieldOutcome]:
+    """Fill every field, then re-read the page and check what actually landed.
+    A click that silently did nothing is indistinguishable from success until
+    you look again, and that is the failure users reported as 'it said it
+    worked'."""
+    values = {a.field_id: a.value for a in answers}
+    outcomes = [fill_field(driver, f, values.get(f.id, ""), pdf_path)
+                for f in schema.fields]
+
+    from app.services.page_probe import probe_controls   # local: avoid a cycle
+    after = {c.ref: c for c in probe_controls(driver)}
+
+    by_id = {f.id: f for f in schema.fields}
+    for out in outcomes:
+        if out.status != "filled":
+            continue                       # skipped/failed are already honest
+        field = by_id[out.field_id]
+        if field.type not in VERIFIABLE_TYPES:
+            continue
+        control = after.get(field.selector.split('"')[1])
+        if control is None:
+            continue                       # re-rendered away; cannot judge
+        if out.value.casefold() not in (control.value or "").casefold():
+            out.status = "failed"
+            out.reason = "the control did not take the value"
+    return outcomes

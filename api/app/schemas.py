@@ -81,3 +81,11 @@ class FormSchema(BaseModel):
 class FieldAnswer(BaseModel):
     field_id: str
     value: str = ""
+
+
+class FieldOutcome(BaseModel):
+    field_id: str
+    label: str
+    value: str = ""
+    status: str                  # filled | skipped | failed
+    reason: str = ""

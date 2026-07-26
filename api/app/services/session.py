@@ -17,8 +17,10 @@ SESSION_IDLE_TTL = 900  # seconds a session may sit idle before it is GC'd
 
 
 class BrowserSession(Protocol):
+    def url(self) -> str: ...
     def snapshot(self) -> str: ...
-    def fill_form(self, schema, answers, pdf_path: str) -> None: ...
+    def probe(self) -> list: ...
+    def fill_verified(self, schema, answers, pdf_path: str) -> list: ...
     def screenshot(self) -> bytes: ...
     def close(self) -> None: ...
 
@@ -27,6 +29,7 @@ class ThreadedBrowserSession:
     """Owns a BrowserDriver on a dedicated thread; every command runs there."""
 
     def __init__(self, driver_factory: Callable[[bool], BrowserDriver], url: str):
+        self._url = url
         self._in: "queue.Queue" = queue.Queue()
         self._ready: "queue.Queue" = queue.Queue()
         self._thread = threading.Thread(
@@ -65,12 +68,20 @@ class ThreadedBrowserSession:
             raise err
         return result
 
+    def url(self) -> str:
+        # the URL the session was opened on; the platform registry keys off it
+        return self._url
+
     def snapshot(self) -> str:
         return self._call(lambda d: d.content())
 
-    def fill_form(self, schema, answers, pdf_path: str) -> None:
-        from app.services.apply import _fill_form   # lazy: avoid import cycle
-        self._call(lambda d: _fill_form(d, schema, answers, pdf_path))
+    def probe(self) -> list:
+        from app.services.page_probe import probe_controls
+        return self._call(probe_controls)
+
+    def fill_verified(self, schema, answers, pdf_path: str) -> list:
+        from app.services.fill_strategies import fill_and_verify
+        return self._call(lambda d: fill_and_verify(d, schema, answers, pdf_path))
 
     def screenshot(self) -> bytes:
         return self._call(lambda d: d.screenshot())

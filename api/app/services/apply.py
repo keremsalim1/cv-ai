@@ -11,9 +11,10 @@ from app.config import get_settings
 from app.schemas import CVData, FieldAnswer, FormField, FormSchema
 from app.services import ats
 from app.services.browser import BrowserDriver
+from app.services.form_build import build_form
 from app.services.llm import MODEL_SMART, LLMClient
 from app.services.page_analysis import (detect_captcha, detect_login,
-                                        extract_form, form_debug)
+                                        extract_form)
 from app.services.usage import enforce_limit, usage_store
 
 logger = logging.getLogger(__name__)
@@ -246,19 +247,30 @@ def submit_application(cv: CVData, url: str, language: str,
         Path(tmp.name).unlink(missing_ok=True)
 
 
+def _no_form_reason(html: str, controls: list) -> str:
+    if detect_captcha(html):
+        return "captcha"
+    if detect_login(html):
+        return "login_wall"
+    return "no_controls" if not controls else "unsupported"
+
+
 def assist_fill(session, cv: CVData, language: str,
                 llm: LLMClient, user_id: str) -> dict:
     """Fill the CURRENT live page of an assisted session. Reads whatever the
-    user navigated to; if there's a fillable form, answers its real fields."""
-    html = session.snapshot()
-    schema = extract_form(html)
+    user navigated to by role, so shadow DOM and custom widgets are visible
+    where parsing the HTML string saw nothing."""
+    controls = session.probe()
+    schema = build_form(controls)
     if not schema.fields:
-        logger.warning("[assist] no_form (html=%d chars) %s",
-                       len(html), form_debug(html))
-        return {"status": "no_form"}
+        html = session.snapshot()
+        reason = _no_form_reason(html, controls)
+        logger.warning("[assist] no_form reason=%s controls=%d",
+                       reason, len(controls))
+        return {"status": "no_form", "reason": reason}
     # Real form present: charge one credit, then answer + fill.
     enforce_limit(usage_store, user_id, get_settings().daily_ai_limit)
-    job_text = _job_text(html)
+    job_text = _job_text(session.snapshot())
     user_payload = AssistIn(cv=cv, job_text=job_text,
                             form=schema.fields).model_dump_json()
     out = llm.chat_json(MODEL_SMART, ASSIST_SYSTEM.format(language=language),
@@ -268,7 +280,7 @@ def assist_fill(session, cv: CVData, language: str,
     tmp.write(pdf_bytes)
     tmp.close()
     try:
-        session.fill_form(schema, out.answers, tmp.name)
+        outcomes = session.fill_verified(schema, out.answers, tmp.name)
         shot = base64.b64encode(session.screenshot()).decode()
     finally:
         # Unlike submit_application, the assisted browser stays open, so it still
@@ -279,8 +291,9 @@ def assist_fill(session, cv: CVData, language: str,
         except OSError as exc:
             logger.warning("temp PDF still held by the browser, leaving it "
                            "to the OS temp dir: %s (%s)", tmp.name, exc)
-    values = {a.field_id: a.value for a in out.answers}
-    filled = [{"label": f.label, "value": values.get(f.id, "")}
-              for f in schema.fields if f.type != "file"]
-    return {"status": "filled", "filled": filled,
+    filled = [{"label": o.label, "value": o.value}
+              for o in outcomes if o.status == "filled"]
+    unfilled = [{"label": o.label, "reason": o.reason}
+                for o in outcomes if o.status == "failed"]
+    return {"status": "filled", "filled": filled, "unfilled": unfilled,
             "field_count": len(schema.fields), "screenshot": shot}

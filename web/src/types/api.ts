@@ -99,6 +99,15 @@ export type SubmitResult =
   | { status: 'login_required' }
   | { status: 'captcha' }
 
+export type AssistNoFormReason = 'login_wall' | 'captcha' | 'no_controls' | 'unsupported'
+
 export type AssistFillResult =
-  | { status: 'filled'; filled: { label: string; value: string }[]; field_count: number; screenshot: string }
-  | { status: 'no_form' }
+  | {
+      status: 'filled'
+      filled: { label: string; value: string }[]
+      // fields a custom widget silently refused; the user completes these by hand
+      unfilled?: { label: string; reason: string }[]
+      field_count: number
+      screenshot: string
+    }
+  | { status: 'no_form'; reason?: AssistNoFormReason }

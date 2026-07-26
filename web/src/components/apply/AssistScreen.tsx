@@ -1,9 +1,16 @@
 'use client'
 import { useTranslations } from 'next-intl'
 import { Wand2, CheckCircle2, Flag } from 'lucide-react'
-import type { AssistFillResult } from '@/types/api'
+import type { AssistFillResult, AssistNoFormReason } from '@/types/api'
 import { Button } from '@/components/ui/button'
 import { ProgressBar } from '@/components/ProgressBar'
+
+const REASON_KEYS: Record<AssistNoFormReason, string> = {
+  login_wall: 'assistReasonLoginWall',
+  captcha: 'assistReasonCaptcha',
+  no_controls: 'assistReasonNoControls',
+  unsupported: 'assistReasonUnsupported',
+}
 
 export function AssistScreen({ result, busy, onFill, onFinish }: {
   result: AssistFillResult | null
@@ -33,7 +40,7 @@ export function AssistScreen({ result, busy, onFill, onFinish }: {
 
       {result?.status === 'no_form' && (
         <p className="rounded-lg bg-warning/10 px-4 py-3 text-sm text-warning">
-          {t('assistNoForm')}
+          {t(REASON_KEYS[result.reason ?? 'no_controls'])}
         </p>
       )}
 
@@ -49,6 +56,14 @@ export function AssistScreen({ result, busy, onFill, onFinish }: {
                 <li key={i}><span className="text-foreground">{f.label}:</span> {f.value}</li>
               ))}
             </ul>
+          )}
+          {result.unfilled && result.unfilled.length > 0 && (
+            <div className="rounded-lg bg-warning/10 px-4 py-3 text-sm text-warning">
+              <p>{t('assistUnfilled')}</p>
+              <ul className="mt-1 flex flex-col gap-1">
+                {result.unfilled.map((f, i) => <li key={i}>{f.label}</li>)}
+              </ul>
+            </div>
           )}
           <img src={`data:image/png;base64,${result.screenshot}`} alt={t('assistFilledCount', { count: result.field_count })}
             className="w-full rounded-xl border border-border" />

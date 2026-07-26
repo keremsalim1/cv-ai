@@ -12,7 +12,8 @@ SYSTEM = (
     "Write the summary in first person, active voice (e.g. Turkish 'ben dili': "
     "'...geliştiriyorum', not '...geliştirmiştir'); never refer to the person "
     "in third person. If 'title' is missing, derive it from the most recent "
-    "job title. "
+    "job title. Copy contact details and the linkedin/github/website URLs "
+    "through unchanged — never drop, shorten or reformat them. "
     "Analyze the person's profession from the CV and fill 'skill_groups' as a "
     'list of {{"name": str, "skills": [str]}} objects (the group label key is '
     '"name", never "category"): group every skill under 3-5 group names that '
@@ -80,7 +81,8 @@ def render_pdf(cv: CVData, language: str) -> bytes:
         pdf.set_font("Main", "", 12)
         pdf.cell(0, 7, cv.title, new_x="LMARGIN", new_y="NEXT", align="C")
     pdf.set_font("Main", "", 10)
-    contact = " | ".join(x for x in [cv.location, cv.phone, cv.email] if x)
+    contact = " | ".join(x for x in [cv.location, cv.phone, cv.email,
+                                     cv.linkedin, cv.github, cv.website] if x)
     if contact:
         pdf.cell(0, 6, contact, new_x="LMARGIN", new_y="NEXT", align="C")
     pdf.ln(3)

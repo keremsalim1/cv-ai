@@ -40,8 +40,58 @@ def test_extract_form_selectors_are_xpaths():
     assert all(f.selector.startswith("/") for f in schema.fields)
 
 
+def test_selector_prefers_a_unique_id_over_a_positional_path():
+    # React portals re-render between snapshot and fill; a positional path goes
+    # stale, an id survives. (LinkedIn's controls carry useId values like ":ra:".)
+    schema = extract_form(_read("dialog_no_form.html"))
+    by_id = {f.id: f for f in schema.fields}
+    assert by_id["mobile-phone-number"].selector == '//*[@id="d-phone"]'
+    assert by_id["email-address"].selector == '//*[@id="d-email"]'
+
+
+def test_selector_falls_back_to_a_path_without_a_usable_id():
+    page = ("<html><body><form>"
+            "<label>A<input name='a'></label>"
+            "<label>B<input name='b' id='dup'></label>"
+            "<label>C<input name='c' id='dup'></label>"
+            "</form></body></html>")
+    by_id = {f.id: f for f in extract_form(page).fields}
+    assert by_id["a"].selector.startswith("/html")      # no id at all
+    assert by_id["b"].selector.startswith("/html")      # id is not unique
+
+
 def test_no_form_returns_empty():
     assert extract_form("<html><body><p>hi</p></body></html>").fields == []
+
+
+def test_extract_form_falls_back_to_dialog_when_page_has_no_form():
+    # LinkedIn Easy Apply: no <form> anywhere, application inside a <dialog>.
+    schema = extract_form(_read("dialog_no_form.html"))
+    by_id = {f.id: f for f in schema.fields}
+    assert len(schema.fields) == 4
+    assert by_id["email-address"].type == "select"
+    assert by_id["email-address"].options == ["ada@example.com", "ada.lovelace@work.com"]
+    assert by_id["mobile-phone-number"].type == "text"
+    assert by_id["how-many-years-of-work-experience-do-you-have-with-react"].type == "text"
+    # page chrome outside the dialog must stay out
+    assert "global-search" not in by_id
+    assert not any("Arama yap" in f.label for f in schema.fields)
+    assert not any(f.id == "lang-picker" for f in schema.fields)
+
+
+def test_dialog_fallback_never_offers_a_submit_button():
+    # "İleri" advances a step; auto-clicking it would skip the user's review.
+    assert extract_form(_read("dialog_no_form.html")).submit_selector is None
+
+
+def test_real_form_wins_over_a_dialog_on_the_same_page():
+    page = _read("greenhouse_like.html").replace(
+        "</body>", "<dialog open><label for='x'>Cookie choice</label>"
+                   "<input id='x'><input id='y'></dialog></body>")
+    schema = extract_form(page)
+    by_id = {f.id: f for f in schema.fields}
+    assert "full_name" in by_id
+    assert schema.submit_selector is not None
 
 
 def test_detect_login():

@@ -1,0 +1,47 @@
+<!-- Mirrors LinkedIn "Easy Apply": the whole page has NO <form> element; the
+     application lives in a native <dialog> and every control sits bare in the
+     DOM. Page chrome (search box, language picker) sits outside the dialog. -->
+<html>
+  <body>
+    <header>
+      <input id="global-search" placeholder="Arama yap" />
+    </header>
+
+    <main>
+      <h1>Frontend Developer</h1>
+      <p>OBSS is hiring a frontend developer in Istanbul.</p>
+    </main>
+
+    <dialog data-testid="dialog" aria-labelledby="dialog-header" open>
+      <h2 id="dialog-header">OBSS için başvuru yap</h2>
+
+      <label for="d-email">Email address*</label>
+      <select id="d-email">
+        <option>ada@example.com</option>
+        <option>ada.lovelace@work.com</option>
+      </select>
+
+      <label for="d-code">Ülke telefon kodu*</label>
+      <select id="d-code">
+        <option>Türkiye (+90)</option>
+        <option>United Kingdom (+44)</option>
+      </select>
+
+      <label for="d-phone">Mobile phone number*</label>
+      <input id="d-phone" type="tel" />
+
+      <label for="d-react">How many years of work experience do you have with React?*</label>
+      <input id="d-react" type="text" />
+
+      <button type="button" aria-label="Kapat"></button>
+      <button type="button">İleri</button>
+    </dialog>
+
+    <footer>
+      <select id="lang-picker">
+        <option>Türkçe</option>
+        <option>English</option>
+      </select>
+    </footer>
+  </body>
+</html>

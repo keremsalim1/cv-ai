@@ -28,6 +28,18 @@ def test_render_pdf_title_and_header_text():
     assert "London" in text and "ada@example.com" in text
 
 
+def test_render_pdf_includes_profile_links():
+    import pymupdf
+
+    cv = _cv()
+    cv.linkedin = "linkedin.com/in/ada"
+    cv.github = "github.com/ada"
+    pdf = render_pdf(cv, "en")
+    text = pymupdf.open(stream=pdf, filetype="pdf")[0].get_text()
+    assert "linkedin.com/in/ada" in text
+    assert "github.com/ada" in text
+
+
 def test_render_pdf_education_without_degree():
     import pymupdf
 

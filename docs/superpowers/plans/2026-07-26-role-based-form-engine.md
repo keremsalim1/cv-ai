@@ -33,7 +33,7 @@
 - Consumes: nothing
 - Produces: `BrowserDriver.evaluate(script: str, frame: int = 0) -> Any`, `BrowserDriver.frame_count() -> int`, and a `frame: int = 0` keyword on `fill`, `select_by_label`, `click`, `set_checked`, `set_files`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `api/tests/test_browser_driver.py`:
 
@@ -81,12 +81,12 @@ def test_xpath_and_css_both_work_without_an_engine_argument(driver):
     assert driver.evaluate("() => document.getElementById('top').value") == "via css"
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Run: `cd api && ./.venv/Scripts/python.exe -m pytest tests/test_browser_driver.py -q`
 Expected: FAIL — `PlaywrightDriver.__init__() got an unexpected keyword argument 'headed'` is fine to fix by using positional args; the real failure is `AttributeError: 'PlaywrightDriver' object has no attribute 'frame_count'`.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 In `api/app/services/browser.py`, add to the `BrowserDriver` Protocol:
 
@@ -149,12 +149,12 @@ In `api/tests/fake_browser.py`, add to `FakeDriver`:
 and add `frame=0` to every existing `FakeDriver` action method signature (do not
 change what they record yet — Task 5 does that).
 
-- [ ] **Step 4: Run the tests**
+- [x] **Step 4: Run the tests**
 
 Run: `cd api && ./.venv/Scripts/python.exe -m pytest -q`
 Expected: PASS — 99 existing + 3 new.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add api/app/services/browser.py api/tests/fake_browser.py api/tests/test_browser_driver.py
@@ -174,7 +174,7 @@ git commit -m "feat(api): frame-aware browser driver with in-page evaluate"
 - Consumes: `driver.evaluate(script, frame)`, `driver.frame_count()` from Task 1
 - Produces: `RawControl` (pydantic model, fields listed below) and `probe_controls(driver) -> list[RawControl]`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `api/tests/test_page_probe.py`:
 
@@ -249,12 +249,12 @@ def test_probe_stamps_a_ref_that_addresses_the_control(driver):
         ".getElementById('em').value") == "ada@example.com"
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Run: `cd api && ./.venv/Scripts/python.exe -m pytest tests/test_page_probe.py -q`
 Expected: FAIL — `ModuleNotFoundError: No module named 'app.services.page_probe'`
 
-- [ ] **Step 3: Write the collector**
+- [x] **Step 3: Write the collector**
 
 Create `api/app/services/probe.js`. It is one arrow function taking the frame index, so Python can call it as `({SCRIPT})(3)`:
 
@@ -439,12 +439,12 @@ def probe_controls(driver) -> list[RawControl]:
     return controls
 ```
 
-- [ ] **Step 4: Run the tests**
+- [x] **Step 4: Run the tests**
 
 Run: `cd api && ./.venv/Scripts/python.exe -m pytest tests/test_page_probe.py -q`
 Expected: PASS — 4 tests.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add api/app/services/probe.js api/app/services/page_probe.py api/tests/test_page_probe.py
@@ -465,7 +465,7 @@ This task exists to settle Risk 1 in the spec before any per-portal assumption i
 - Consumes: `probe_controls(driver)` from Task 2
 - Produces: fixture files `api/tests/fixtures/inventories/<platform>-<slug>.json`, each a JSON list of `RawControl` dicts
 
-- [ ] **Step 1: Write the capture tool**
+- [x] **Step 1: Write the capture tool**
 
 Create `api/tools/capture_page.py`:
 
@@ -550,7 +550,7 @@ cd api && ./.venv/Scripts/python.exe tools/capture_page.py "<url>" --platform ka
 
 For each platform report: total controls, visible controls, and how many carry an accessible name. Per the spec, the bet holds if named-visible is a large majority. Report to the user before continuing; if a platform scores poorly, note it as needing an adapter in Task 9 rather than silently proceeding.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add api/tools/capture_page.py api/tests/fixtures/inventories
@@ -570,7 +570,7 @@ git commit -m "test(api): page capture tool and real-portal inventory fixtures"
 - Consumes: `RawControl` from Task 2, fixtures from Task 3
 - Produces: `build_form(controls: list[RawControl]) -> FormSchema`, `accessible_name(control: RawControl) -> str`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `api/tests/test_form_build.py`:
 
@@ -674,12 +674,12 @@ def test_real_captured_inventories_yield_fields():
         assert all(f.label for f in form.fields), f"{path.name} has an unlabelled field"
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Run: `cd api && ./.venv/Scripts/python.exe -m pytest tests/test_form_build.py -q`
 Expected: FAIL — `ModuleNotFoundError: No module named 'app.services.form_build'`
 
-- [ ] **Step 3: Add `frame` to the schema**
+- [x] **Step 3: Add `frame` to the schema**
 
 In `api/app/schemas.py`, inside `FormField`, after the `selector` line:
 
@@ -687,7 +687,7 @@ In `api/app/schemas.py`, inside `FormField`, after the `selector` line:
     frame: int = 0               # index into page.frames; 0 is the main frame
 ```
 
-- [ ] **Step 4: Implement the builder**
+- [x] **Step 4: Implement the builder**
 
 Create `api/app/services/form_build.py`:
 
@@ -800,17 +800,17 @@ def build_form(controls: list[RawControl]) -> FormSchema:
 
 Note on the radio group label: the group's `label` is the first member's label, matching the current `extract_form` behaviour when no fieldset legend exists. Improving it is out of scope.
 
-- [ ] **Step 5: Run the tests**
+- [x] **Step 5: Run the tests**
 
 Run: `cd api && ./.venv/Scripts/python.exe -m pytest tests/test_form_build.py -q`
 Expected: PASS — 11 tests.
 
-- [ ] **Step 6: Run the whole suite**
+- [x] **Step 6: Run the whole suite**
 
 Run: `cd api && ./.venv/Scripts/python.exe -m pytest -q`
 Expected: PASS, nothing regressed.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add api/app/services/form_build.py api/app/schemas.py api/tests/test_form_build.py
@@ -830,7 +830,7 @@ git commit -m "feat(api): build a form schema from role observations"
 - Consumes: `FormField` (with `frame`) from Task 4, `driver` from Task 1
 - Produces: `FieldOutcome` (pydantic: `field_id, label, value, status, reason`) and `fill_field(driver, field, value, pdf_path) -> FieldOutcome`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `api/tests/test_fill_strategies.py`:
 
@@ -942,12 +942,12 @@ Three existing assertions read those recordings as 2-tuples and break. Fix them 
   rewrites this test wholesale, so the minimal fix here is the same dict
   comprehension; do not invest in it further.
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Run: `cd api && ./.venv/Scripts/python.exe -m pytest tests/test_fill_strategies.py -q`
 Expected: FAIL — `ModuleNotFoundError: No module named 'app.services.fill_strategies'`
 
-- [ ] **Step 3: Add `FieldOutcome` to the schema**
+- [x] **Step 3: Add `FieldOutcome` to the schema**
 
 In `api/app/schemas.py`, after `FieldAnswer`:
 
@@ -960,7 +960,7 @@ class FieldOutcome(BaseModel):
     reason: str = ""
 ```
 
-- [ ] **Step 4: Implement the strategies**
+- [x] **Step 4: Implement the strategies**
 
 Create `api/app/services/fill_strategies.py`:
 
@@ -1044,12 +1044,12 @@ def fill_field(driver, field: FormField, value: str, pdf_path: str) -> FieldOutc
     return outcome("filled")
 ```
 
-- [ ] **Step 5: Run the tests**
+- [x] **Step 5: Run the tests**
 
 Run: `cd api && ./.venv/Scripts/python.exe -m pytest -q`
 Expected: PASS — including the existing tests you updated to 3-tuples.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add api/app/services/fill_strategies.py api/app/schemas.py api/tests/test_fill_strategies.py api/tests/fake_browser.py api/tests
@@ -1068,7 +1068,7 @@ git commit -m "feat(api): per-role fill strategies with honest outcomes"
 - Consumes: `fill_field` from Task 5, `probe_controls` from Task 2
 - Produces: `fill_and_verify(driver, schema, answers, pdf_path) -> list[FieldOutcome]`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Append to `api/tests/test_fill_strategies.py`:
 
@@ -1121,12 +1121,12 @@ def test_a_widget_we_cannot_read_back_is_left_as_filled():
     assert outcomes[0].status == "filled"
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Run: `cd api && ./.venv/Scripts/python.exe -m pytest tests/test_fill_strategies.py -q`
 Expected: FAIL — `ImportError: cannot import name 'fill_and_verify'`
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 Append to `api/app/services/fill_strategies.py`:
 
@@ -1160,12 +1160,12 @@ def fill_and_verify(driver, schema, answers, pdf_path: str) -> list[FieldOutcome
     return outcomes
 ```
 
-- [ ] **Step 4: Run the tests**
+- [x] **Step 4: Run the tests**
 
 Run: `cd api && ./.venv/Scripts/python.exe -m pytest -q`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add api/app/services/fill_strategies.py api/tests/test_fill_strategies.py
@@ -1186,7 +1186,7 @@ git commit -m "feat(api): verify fills by re-reading the page"
 - Consumes: `probe_controls`, `build_form`, `fill_and_verify`
 - Produces: `assist_fill` returns `{"status": "filled", "filled": [...], "unfilled": [...], "field_count": int, "screenshot": str}` or `{"status": "no_form", "reason": str}`
 
-- [ ] **Step 1: Teach the session fake the new commands**
+- [x] **Step 1: Teach the session fake the new commands**
 
 Every assisted test drives the flow through `FakeSession`, so it must speak the
 new protocol before any test can. Rewrite `api/tests/fake_session.py`:
@@ -1226,7 +1226,7 @@ class FakeSession:
 `fill_form` and the `_fill_form` import are gone: nothing calls them in assisted
 mode any more, and the auto flow calls `_fill_form` directly.
 
-- [ ] **Step 2: Convert the existing assisted tests to inventories**
+- [x] **Step 2: Convert the existing assisted tests to inventories**
 
 These four tests feed HTML to `extract_form` and will find zero fields once the
 engine reads roles instead. In `api/tests/test_apply_assist.py`, add inventories
@@ -1290,7 +1290,7 @@ The field ids the LLM answers against (`motivation`, `email`, `linkedin`,
 `github`, `portfolio`) are unchanged, because `build_form` derives an id from
 `control.name` exactly as `extract_form` did.
 
-- [ ] **Step 3: Write the failing tests for the new behaviour**
+- [x] **Step 3: Write the failing tests for the new behaviour**
 
 Add to `api/tests/test_apply_assist.py`:
 
@@ -1349,13 +1349,13 @@ def test_assist_fill_names_a_login_wall_as_the_reason(client, auth_headers):
     assert r.json()["reason"] == "login_wall"
 ```
 
-- [ ] **Step 4: Run the tests to verify they fail**
+- [x] **Step 4: Run the tests to verify they fail**
 
 Run: `cd api && ./.venv/Scripts/python.exe -m pytest tests/test_apply_assist.py -q`
 Expected: FAIL — `AttributeError: 'FakeSession' object has no attribute 'probe'`
 is raised from `assist_fill`, which still calls `extract_form`.
 
-- [ ] **Step 5: Give the session probe/fill commands and remember its URL**
+- [x] **Step 5: Give the session probe/fill commands and remember its URL**
 
 In `api/app/services/session.py`, add to the `BrowserSession` Protocol:
 
@@ -1386,7 +1386,7 @@ alongside the existing thread setup) and add:
 are bound to the session's own thread. Drop `fill_form`, which no longer has a
 caller.
 
-- [ ] **Step 6: Rewrite `assist_fill`**
+- [x] **Step 6: Rewrite `assist_fill`**
 
 In `api/app/services/apply.py`, replace the body of `assist_fill` down to the `session.fill_form(...)` call:
 
@@ -1442,12 +1442,12 @@ def assist_fill(session, cv: CVData, language: str,
 
 Add `from app.services.form_build import build_form` to the imports. Leave `prepare_application` and `submit_application` untouched.
 
-- [ ] **Step 7: Run the whole suite**
+- [x] **Step 7: Run the whole suite**
 
 Run: `cd api && ./.venv/Scripts/python.exe -m pytest -q`
 Expected: PASS.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add api/app/services/session.py api/app/services/apply.py api/tests
@@ -1469,7 +1469,7 @@ git commit -m "feat(api): assisted fill reads the page by role and reports what 
 - Consumes: the `assist_fill` response shape from Task 7
 - Produces: no exported API; UI only
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Add to `web/src/components/apply/__tests__/AssistScreen.test.tsx`:
 
@@ -1489,12 +1489,12 @@ it('explains why no form was found instead of just saying none', () => {
 })
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Run: `cd web && npx vitest run src/components/apply/__tests__/AssistScreen.test.tsx`
 Expected: FAIL — the unfilled list is not rendered.
 
-- [ ] **Step 3: Extend the types**
+- [x] **Step 3: Extend the types**
 
 In `web/src/types/api.ts`, extend `AssistFillResult`:
 
@@ -1503,7 +1503,7 @@ In `web/src/types/api.ts`, extend `AssistFillResult`:
   reason?: 'login_wall' | 'captcha' | 'no_controls' | 'unsupported'
 ```
 
-- [ ] **Step 4: Add the messages**
+- [x] **Step 4: Add the messages**
 
 In `web/src/messages/tr.json` under `optimize`:
 
@@ -1527,7 +1527,7 @@ and in `en.json`:
 
 Add `assistUnfilled` and the four reason keys to the key list in `web/src/messages/__tests__/parity.test.ts` if that test enumerates them; the identical-keys test covers them automatically.
 
-- [ ] **Step 5: Render them**
+- [x] **Step 5: Render them**
 
 In `web/src/components/apply/AssistScreen.tsx`, replace the `no_form` block:
 
@@ -1555,12 +1555,12 @@ and inside the `filled` section, after the filled list:
           )}
 ```
 
-- [ ] **Step 6: Run the web checks**
+- [x] **Step 6: Run the web checks**
 
 Run in `web/`: `npm test`, then `npx tsc --noEmit`, then `npm run build`.
 Expected: all pass; `/optimize` still listed in the build output.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add web/src/types/api.ts web/src/components/apply web/src/messages
@@ -1581,7 +1581,7 @@ git commit -m "feat(web): show unfilled fields and explain why no form was found
 - Consumes: `build_form` from Task 4
 - Produces: `platform_for(url: str) -> Platform | None`, `Platform(name, hosts, scope_landmark)`, and `build_form(controls, platform=None)`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `api/tests/test_platforms.py`:
 
@@ -1609,12 +1609,12 @@ def test_a_platform_can_pin_the_scope_that_generic_rules_would_miss():
     assert [f.label for f in build_form(controls, pinned).fields] == ["Full name"]
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Run: `cd api && ./.venv/Scripts/python.exe -m pytest tests/test_platforms.py -q`
 Expected: FAIL — `ModuleNotFoundError: No module named 'app.services.platforms'`
 
-- [ ] **Step 3: Implement the registry**
+- [x] **Step 3: Implement the registry**
 
 Create `api/app/services/platforms/__init__.py`:
 
@@ -1668,7 +1668,7 @@ def _in_scope(controls: list[RawControl], platform=None) -> list[RawControl]:
 
 Update the call inside `build_form` to `_in_scope(controls, platform)`.
 
-- [ ] **Step 4: Consult the registry from the live path**
+- [x] **Step 4: Consult the registry from the live path**
 
 Without this the registry is dead code. In `api/app/services/apply.py`, inside
 `assist_fill`, replace the `build_form(controls)` call:
@@ -1708,7 +1708,7 @@ def test_a_registered_platform_overrides_the_generic_scope(client, auth_headers,
 `FakeSession.url()` returns `https://jobs.example.com/1`, which is why the host
 in the registry entry matches.
 
-- [ ] **Step 5: Write the measurement script**
+- [x] **Step 5: Write the measurement script**
 
 Create `api/tools/measure_fixtures.py`:
 
@@ -1742,12 +1742,12 @@ Run: `cd api && ./.venv/Scripts/python.exe tools/measure_fixtures.py`
 
 Report the table to the user. Any portal whose fields are missing or unnamed is a candidate for a `Platform` entry — add entries only for those, each with a test in `test_platforms.py` built from that portal's fixture.
 
-- [ ] **Step 7: Run the whole suite**
+- [x] **Step 7: Run the whole suite**
 
 Run: `cd api && ./.venv/Scripts/python.exe -m pytest -q` and, in `web/`, `npm test`.
 Expected: all green.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add api/app/services/platforms api/app/services/form_build.py api/app/services/apply.py api/tools/measure_fixtures.py api/tests

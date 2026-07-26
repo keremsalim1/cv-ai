@@ -87,7 +87,7 @@ def test_assist_fill_answers_profile_link_fields_from_the_cv(client, auth_header
     r = client.post("/apply/assist/fill", headers=auth_headers,
                     json={"session_id": sid, "cv": cv, "language": "en"})
     assert r.status_code == 200
-    filled = dict(driver.fills)
+    filled = {sel: val for sel, val, _frame in driver.fills}
     assert filled['//*[@id="li"]'] == "https://linkedin.com/in/ada"
     assert filled['//*[@id="gh"]'] == "https://github.com/ada"
     assert filled['//*[@id="pf"]'] == "https://ada.dev"

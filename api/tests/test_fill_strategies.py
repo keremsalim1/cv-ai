@@ -1,5 +1,5 @@
-from app.schemas import FormField
-from app.services.fill_strategies import fill_field
+from app.schemas import FieldAnswer, FormField, FormSchema
+from app.services.fill_strategies import fill_and_verify, fill_field
 from tests.fake_browser import FakeDriver
 
 
@@ -99,3 +99,47 @@ def test_a_driver_error_becomes_a_failed_outcome_not_an_exception():
     out = fill_field(Boom(["<html></html>"]), field(type="text"), "Ada", "/tmp/cv.pdf")
     assert out.status == "failed"
     assert "not visible" in out.reason
+
+
+def test_a_control_that_did_not_take_the_value_is_reported_as_failed():
+    schema = FormSchema(fields=[field(id="name", type="text", label="Full name")])
+    # the fill call reports success, but the verification probe shows the
+    # control is still empty — a silently-ignored click looks exactly like this
+    d = FakeDriver(["<html></html>"], evaluations=[
+        [{"ref": "0-1", "role": "textbox", "value": "", "frame": 0}],
+    ])
+    outcomes = fill_and_verify(d, schema, [FieldAnswer(field_id="name", value="Ada")],
+                               "/tmp/cv.pdf")
+    assert outcomes[0].status == "failed"
+    assert "did not take" in outcomes[0].reason
+
+
+def test_a_control_holding_the_value_stays_filled():
+    schema = FormSchema(fields=[field(id="name", type="text", label="Full name")])
+    d = FakeDriver(["<html></html>"], evaluations=[
+        [{"ref": "0-1", "role": "textbox", "value": "Ada", "frame": 0}],
+    ])
+    outcomes = fill_and_verify(d, schema, [FieldAnswer(field_id="name", value="Ada")],
+                               "/tmp/cv.pdf")
+    assert outcomes[0].status == "filled"
+
+
+def test_verification_never_downgrades_a_skipped_or_failed_field():
+    schema = FormSchema(fields=[field(id="name", type="text", label="Full name")])
+    d = FakeDriver(["<html></html>"], evaluations=[[]])
+    outcomes = fill_and_verify(d, schema, [FieldAnswer(field_id="name", value="")],
+                               "/tmp/cv.pdf")
+    assert outcomes[0].status == "skipped"
+
+
+def test_a_widget_we_cannot_read_back_is_left_as_filled():
+    # comboboxes often keep their value in a hidden node; absence of evidence
+    # must not be reported as evidence of failure
+    schema = FormSchema(fields=[field(id="c", type="combobox", label="Country")])
+    d = FakeDriver(["<html></html>"], evaluations=[
+        [{"ref": "0-9", "role": "option", "label_text": "Türkiye", "frame": 0}],
+        [],
+    ])
+    outcomes = fill_and_verify(d, schema, [FieldAnswer(field_id="c", value="Türkiye")],
+                               "/tmp/cv.pdf")
+    assert outcomes[0].status == "filled"

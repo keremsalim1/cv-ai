@@ -145,6 +145,7 @@
     "NOT_AUTHENTICATED": "Your session expired. Please log in again.",
     "SESSION_NOT_FOUND": "The browser session was closed. Start the assisted apply again.",
     "FORBIDDEN": "This browser session belongs to another account.",
+    "TOO_MANY_SESSIONS": "The server is at capacity right now. Try again in a few minutes.",
     "UNKNOWN": "Something went wrong. Please try again."
   },
   "common": {

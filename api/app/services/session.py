@@ -7,9 +7,11 @@ import time
 import uuid
 from typing import Callable, Protocol
 
-from fastapi import HTTPException
+from fastapi import Depends, HTTPException
 
-from app.services.browser import BrowserDriver, get_driver_factory
+from app.auth import get_current_user
+from app.config import get_settings
+from app.services.browser import BrowserDriver, driver_factory_for
 
 SESSION_IDLE_TTL = 900  # seconds a session may sit idle before it is GC'd
 
@@ -88,12 +90,45 @@ class _Entry:
 
 
 class SessionManager:
-    def __init__(self):
+    def __init__(self, max_sessions: int | None = None):
         self._sessions: dict[str, _Entry] = {}
         self._lock = threading.Lock()
+        self._max_sessions = max_sessions
+
+    @property
+    def max_sessions(self) -> int:
+        if self._max_sessions is not None:
+            return self._max_sessions
+        return get_settings().max_browser_sessions
+
+    def live_count(self) -> int:
+        with self._lock:
+            return len(self._sessions)
+
+    def _take_user_sessions(self, user_id: str) -> list[_Entry]:
+        with self._lock:
+            return [self._sessions.pop(sid) for sid, entry
+                    in list(self._sessions.items()) if entry.user_id == user_id]
 
     def start(self, factory: Callable[[str], BrowserSession], url: str, user_id: str) -> str:
         self._gc()
+        # One live browser per user. Their profile directory can only be opened
+        # by one Chromium at a time, and a session orphaned by a refreshed tab
+        # would otherwise lock them out until the idle TTL expired.
+        for entry in self._take_user_sessions(user_id):
+            try:
+                entry.session.close()
+            except Exception:
+                pass
+
+        # Refuse before launching, not after: a browser we then throw away has
+        # already cost the memory we are trying to protect.
+        with self._lock:
+            at_capacity = len(self._sessions) >= self.max_sessions
+        if at_capacity:
+            raise HTTPException(status_code=503,
+                                detail={"code": "TOO_MANY_SESSIONS"})
+
         session = factory(url)
         sid = uuid.uuid4().hex
         with self._lock:
@@ -148,6 +183,8 @@ class SessionManager:
 session_manager = SessionManager()
 
 
-def get_session_factory() -> Callable[[str], BrowserSession]:
-    driver_factory = get_driver_factory()
+def get_session_factory(
+    user_id: str = Depends(get_current_user),
+) -> Callable[[str], BrowserSession]:
+    driver_factory = driver_factory_for(user_id)
     return lambda url: ThreadedBrowserSession(driver_factory, url)

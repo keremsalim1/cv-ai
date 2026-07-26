@@ -1097,9 +1097,20 @@ git add "web/src/components/apply/ApprovalScreen.tsx" "web/src/app/(app)/optimiz
 git commit -m "feat(web): assisted apply step on /optimize (live fill loop + finish)"
 ```
 
-- [ ] **Step 8: Whole-branch review**
+- [x] **Step 8: Whole-branch review**
 
-Request a whole-branch code review (high effort) against `master` before merge, per the SDD workflow. Address findings, then merge.
+Reviewed against `master`. Three findings, all fixed before merge:
+
+1. **Shared Chromium profile** — one `browser_profile_dir` for every user meant a
+   second user inherited the first one's job-site logins, and two concurrent
+   sessions collided on the same directory. Now `browser.profile_dir_for()`
+   gives each user their own hashed subdirectory, bound at the DI layer so no
+   service below can forget it.
+2. **Unbounded browser launches** — `SessionManager.start()` had no cap. Now
+   capped by `settings.max_browser_sessions` (503 `TOO_MANY_SESSIONS`, localized
+   in both languages) with one live session per user, which is also what keeps a
+   per-user profile dir safe to reuse.
+3. **Router read `session_manager._sessions`** — replaced with `live_count()`.
 
 ---
 ```

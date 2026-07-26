@@ -145,6 +145,7 @@
     "NOT_AUTHENTICATED": "Oturumunuz sona erdi. Lütfen tekrar giriş yapın.",
     "SESSION_NOT_FOUND": "Tarayıcı oturumu kapandı. Asistanlı başvuruyu yeniden başlatın.",
     "FORBIDDEN": "Bu tarayıcı oturumu başka bir hesaba ait.",
+    "TOO_MANY_SESSIONS": "Sunucu şu anda kapasitesinin sınırında. Birkaç dakika sonra tekrar deneyin.",
     "UNKNOWN": "Beklenmeyen bir hata oluştu. Lütfen tekrar deneyin."
   },
   "common": {

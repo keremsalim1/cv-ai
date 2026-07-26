@@ -40,6 +40,55 @@ def _slug(text: str) -> str:
     return re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-") or "field"
 
 
+def form_debug(page_html: str) -> str:
+    """Why did extract_form find nothing? Summarize the page's real controls."""
+    doc = lxml_html.fromstring(page_html)
+    forms = doc.xpath("//form")
+    parts = [f"forms={len(forms)}"]
+    for i, form in enumerate(forms):
+        controls = form.xpath(".//input[not(@type='hidden')] | .//textarea | .//select")
+        has_pw = bool(form.xpath(".//input[@type='password']"))
+        types = [c.tag if c.tag != "input" else (c.get("type") or "text")
+                 for c in controls][:8]
+        parts.append(f"form[{i}]: controls={len(controls)} pw={has_pw} types={types}")
+    all_controls = doc.xpath("//input[not(@type='hidden')] | //textarea | //select")
+    orphans = [c for c in all_controls if not c.xpath("ancestor::form")]
+    parts.append(f"controls_total={len(all_controls)} outside_any_form={len(orphans)}")
+    parts.append("orphan_labels=" + str(
+        [(c.tag, (c.get("type") or ""), (c.get("aria-label") or c.get("name")
+          or c.get("placeholder") or "")[:40]) for c in orphans][:10]))
+    return " | ".join(parts)
+
+
+def _selector(el, tree, doc) -> str:
+    """Prefer a unique id over a positional path. Single-page portals re-render
+    between the snapshot we analyse and the moment we fill, which silently
+    invalidates /html/body/div[3]/... — an id survives the re-render."""
+    el_id = el.get("id")
+    if el_id and '"' not in el_id and len(doc.xpath(f'//*[@id="{el_id}"]')) == 1:
+        return f'//*[@id="{el_id}"]'
+    return tree.getpath(el)
+
+
+def _controls(el):
+    return el.xpath(".//input[not(@type='hidden')] | .//textarea | .//select")
+
+
+def _best_dialog(doc):
+    """The open modal with the most controls. Portals like LinkedIn Easy Apply
+    render their application inside a <dialog> with no <form> element at all;
+    scoping to the dialog keeps page chrome (search box, language picker) out."""
+    best, best_count = None, 0
+    for dialog in doc.xpath("//dialog[@open] | //*[@role='dialog'] "
+                            "| //*[@aria-modal='true']"):
+        if dialog.xpath(".//input[@type='password']"):
+            continue
+        count = len(_controls(dialog))
+        if count > best_count:
+            best, best_count = dialog, count
+    return best, best_count
+
+
 def extract_form(page_html: str) -> FormSchema:
     doc = lxml_html.fromstring(page_html)
     tree = doc.getroottree()
@@ -47,13 +96,24 @@ def extract_form(page_html: str) -> FormSchema:
     forms = doc.xpath("//form")
     best, best_count = None, 0
     for form in forms:
-        count = len(form.xpath(
-            ".//input[not(@type='hidden')] | .//textarea | .//select"))
+        # A form with a password field is a sign-in / create-account form, not
+        # the job application form. Skipping it keeps a login widget (common in
+        # page headers, even after login) from being mistaken for the form and
+        # lets the real application form win.
+        if form.xpath(".//input[@type='password']"):
+            continue
+        count = len(_controls(form))
         if count > best_count:
             best, best_count = form, count
     # fewer than 2 visible controls: not an application form (search bars etc.)
-    if best is None or best_count < 2:
-        return FormSchema()
+    real_form = best is not None and best_count >= 2
+    if not real_form:
+        # No usable <form>. Fall back to the open dialog the user is looking at;
+        # one control is enough there, since a modal step may ask a single
+        # question ("years of experience with React?").
+        best, best_count = _best_dialog(doc)
+        if best is None or best_count < 1:
+            return FormSchema()
 
     fields: list[FormField] = []
     used_ids: set[str] = set()
@@ -75,7 +135,7 @@ def extract_form(page_html: str) -> FormSchema:
             continue
         label = _label_text(el, doc)
         required = el.get("required") is not None or el.get("aria-required") == "true"
-        selector = tree.getpath(el)
+        selector = _selector(el, tree, doc)
 
         if tag == "textarea":
             ftype, options, opt_sel = "textarea", [], []
@@ -92,7 +152,7 @@ def extract_form(page_html: str) -> FormSchema:
             group = best.xpath(f".//input[@type='radio'][@name='{name}']")
             ftype = "radio"
             options = [_label_text(r, doc) for r in group]
-            opt_sel = [tree.getpath(r) for r in group]
+            opt_sel = [_selector(r, tree, doc) for r in group]
             # group label: the fieldset legend, not the first choice's label
             legends = el.xpath("ancestor::fieldset/legend")
             if legends:
@@ -112,6 +172,12 @@ def extract_form(page_html: str) -> FormSchema:
             required=required,
         ))
 
-    submit = best.xpath(".//button[@type='submit'] | .//input[@type='submit'] | .//button[not(@type)]")
-    submit_selector = tree.getpath(submit[0]) if submit else None
+    # Only a real <form> may be auto-submitted. A dialog's primary button is
+    # usually "Next" in a multi-step flow — clicking it would skip the user's
+    # review, so assisted mode always hands the submit back to the user.
+    submit_selector = None
+    if real_form:
+        submit = best.xpath(".//button[@type='submit'] | .//input[@type='submit'] "
+                            "| .//button[not(@type)]")
+        submit_selector = tree.getpath(submit[0]) if submit else None
     return FormSchema(fields=fields, submit_selector=submit_selector)

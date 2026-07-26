@@ -61,3 +61,60 @@ it('scoreCv returns the evaluation and non-JSON errors become UNKNOWN', async ()
   ).rejects.toMatchObject({ code: 'UNKNOWN', status: 500 })
   expect(new ApiError('X', 1)).toBeInstanceOf(Error)
 })
+
+it('applyPrepare posts cv+url+language+headed and returns the result', async () => {
+  const { applyPrepare } = await import('@/lib/api')
+  ;(global.fetch as Mock).mockResolvedValue(jsonResponse(200, {
+    status: 'ready', form: [], cv: CV, changes: [], cover_letter: null, answers: [], job_text: 'jt',
+  }))
+  const out = await applyPrepare(CV, 'https://j.com/1', 'en', true)
+  expect(out.status).toBe('ready')
+  const [url, init] = (global.fetch as Mock).mock.calls[0]
+  expect(String(url)).toBe('http://localhost:8000/apply/prepare')
+  expect(JSON.parse(init.body as string)).toEqual({
+    cv: CV, url: 'https://j.com/1', language: 'en', headed: true,
+  })
+})
+
+it('applySubmit posts answers and defaults headed to false', async () => {
+  const { applySubmit } = await import('@/lib/api')
+  ;(global.fetch as Mock).mockResolvedValue(jsonResponse(200, { status: 'submitted', screenshot: 'AAA' }))
+  const out = await applySubmit(CV, 'https://j.com/1', 'en', [{ field_id: 'x', value: 'y' }])
+  expect(out).toMatchObject({ status: 'submitted', screenshot: 'AAA' })
+  const [, init] = (global.fetch as Mock).mock.calls[0]
+  expect(JSON.parse(init.body as string)).toEqual({
+    cv: CV, url: 'https://j.com/1', language: 'en',
+    answers: [{ field_id: 'x', value: 'y' }], headed: false,
+  })
+})
+
+it('assistStart posts the url and returns the session id', async () => {
+  const { assistStart } = await import('@/lib/api')
+  ;(global.fetch as Mock).mockResolvedValue(jsonResponse(200, { session_id: 'sess-1' }))
+  const out = await assistStart('https://j.com/1')
+  expect(out.session_id).toBe('sess-1')
+  const [url, init] = (global.fetch as Mock).mock.calls[0]
+  expect(String(url)).toBe('http://localhost:8000/apply/assist/start')
+  expect(JSON.parse(init.body as string)).toEqual({ url: 'https://j.com/1' })
+})
+
+it('assistFill posts session+cv+language', async () => {
+  const { assistFill } = await import('@/lib/api')
+  ;(global.fetch as Mock).mockResolvedValue(jsonResponse(200, {
+    status: 'filled', filled: [{ label: 'Email', value: 'a@b.c' }], field_count: 2, screenshot: 'AAA',
+  }))
+  const out = await assistFill('sess-1', CV, 'en')
+  expect(out).toMatchObject({ status: 'filled', field_count: 2 })
+  const [url, init] = (global.fetch as Mock).mock.calls[0]
+  expect(String(url)).toBe('http://localhost:8000/apply/assist/fill')
+  expect(JSON.parse(init.body as string)).toEqual({ session_id: 'sess-1', cv: CV, language: 'en' })
+})
+
+it('assistClose posts the session id', async () => {
+  const { assistClose } = await import('@/lib/api')
+  ;(global.fetch as Mock).mockResolvedValue(jsonResponse(200, { ok: true }))
+  await assistClose('sess-1')
+  const [url, init] = (global.fetch as Mock).mock.calls[0]
+  expect(String(url)).toBe('http://localhost:8000/apply/assist/close')
+  expect(JSON.parse(init.body as string)).toEqual({ session_id: 'sess-1' })
+})

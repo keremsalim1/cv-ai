@@ -12,13 +12,18 @@ from app.schemas import CVData, FieldAnswer, FormField, FormSchema
 from app.services import ats
 from app.services.browser import BrowserDriver
 from app.services.llm import MODEL_SMART, LLMClient
-from app.services.page_analysis import detect_captcha, detect_login, extract_form
+from app.services.page_analysis import (detect_captcha, detect_login,
+                                        extract_form, form_debug)
 from app.services.usage import enforce_limit, usage_store
 
 logger = logging.getLogger(__name__)
 
 LOGIN_WAIT_SECONDS = 180
 LOGIN_POLL_SECONDS = 2
+# Below this many characters of readable page text we treat the page as a bare
+# login gate (nothing to optimize from); above it we optimize + deliver even if
+# the page also offers a sign-in, so an optional login never blocks the user.
+MIN_JOB_TEXT = 200
 
 SYSTEM = (
     "You optimize a CV for one specific job application and answer its form. "
@@ -30,7 +35,8 @@ SYSTEM = (
     "emphasize. changes = short user-facing list of what you altered. "
     "cover_letter: always write one, first person, active voice, grounded in "
     "the CV and the posting. answers: one per form field except type=file; "
-    "identity fields (name/email/phone/location) come from the CV; for "
+    "identity fields (name/email/phone/location, and the LinkedIn/GitHub/"
+    "portfolio URLs from cv.linkedin/cv.github/cv.website) come from the CV; for "
     "select/radio pick EXACTLY one option verbatim from options; if the CV "
     "lacks the information, use value \"\" so the user fills it. "
     "Answer in language: {language}."
@@ -44,6 +50,29 @@ class PrepareOut(BaseModel):
     answers: list[FieldAnswer] = []
 
 
+ASSIST_SYSTEM = (
+    "You fill ONE page of a job application form from a CV. "
+    "Input JSON: cv, job_text, form (fields with id/label/type/options). "
+    'Respond ONLY with JSON: {{"answers": [{{"field_id": str, "value": str}}]}}. '
+    "One answer per field except type=file. Identity fields "
+    "(name/email/phone/location) come from the CV. A field asking for a "
+    "LinkedIn, GitHub or portfolio/website URL is answered from cv.linkedin, "
+    "cv.github and cv.website respectively. For select/radio pick EXACTLY "
+    "one option verbatim from options. If the CV lacks the info, use value \"\" so "
+    "the user fills it. NEVER invent facts. Answer in language: {language}."
+)
+
+
+class AssistIn(BaseModel):
+    cv: CVData
+    job_text: str
+    form: list[FormField]
+
+
+class AnswersOut(BaseModel):
+    answers: list[FieldAnswer] = []
+
+
 def _job_text(html: str) -> str:
     text = trafilatura.extract(html)
     if text:
@@ -54,20 +83,34 @@ def _job_text(html: str) -> str:
 
 
 def _page_state(html: str) -> tuple[bool, FormSchema]:
-    """(is_login_wall, form). A password field ALWAYS means login wall — a
-    login form's surviving fields must never be mistaken for the application
-    form (password inputs are filtered out of extract_form)."""
-    return detect_login(html), extract_form(html)
+    """(is_login_wall, form). A login wall blocks us ONLY when there is no
+    application form to fill: a password field alongside a real form (or a
+    header sign-in widget) is an *optional* login, not a wall."""
+    schema = extract_form(html)
+    return (detect_login(html) and not schema.fields), schema
 
 
 def _wait_for_login(driver: BrowserDriver) -> tuple[str, FormSchema]:
-    """Headed mode: user is logging in by hand; poll until the login wall is
-    gone and an application form appears (or the wait times out)."""
-    deadline = time.monotonic() + LOGIN_WAIT_SECONDS
+    """Headed mode: the user is signing in by hand. Poll until an application
+    form appears OR the login wall clears (or the wait times out), so we never
+    hang once the user is through."""
+    start = time.monotonic()
+    deadline = start + LOGIN_WAIT_SECONDS
+    logger.warning("[apply] wait_for_login: polling up to %ss", LOGIN_WAIT_SECONDS)
     while True:
         html = driver.content()
-        is_login, schema = _page_state(html)
-        if (schema.fields and not is_login) or time.monotonic() > deadline:
+        schema = extract_form(html)
+        raw_login = detect_login(html)
+        elapsed = time.monotonic() - start
+        if schema.fields or not raw_login:
+            logger.warning("[apply] wait_for_login: proceeding after %.0fs "
+                           "(login=%s, fields=%d)", elapsed, raw_login,
+                           len(schema.fields))
+            return html, schema
+        if time.monotonic() > deadline:
+            logger.warning("[apply] wait_for_login: TIMED OUT after %.0fs "
+                           "(login=%s, fields=%d)", elapsed, raw_login,
+                           len(schema.fields))
             return html, schema
         time.sleep(LOGIN_POLL_SECONDS)
 
@@ -85,26 +128,40 @@ def prepare_application(cv: CVData, url: str, language: str, headed: bool,
         driver.goto(url)
         html = driver.content()
         is_login, schema = _page_state(html)
+        logger.warning("[apply] prepare url=%s headed=%s initial is_login=%s "
+                       "fields=%d captcha=%s", url, headed, is_login,
+                       len(schema.fields), detect_captcha(html))
         if headed and (is_login or not schema.fields):
             html, schema = _wait_for_login(driver)
-            is_login = detect_login(html)
-        if detect_captcha(html):
-            return {"status": "captcha", "job_text": _job_text(html)}
-        if is_login:
-            return {"status": "login_required"}
-        if not schema.fields:
-            return {"status": "form_not_found", "job_text": _job_text(html)}
+            is_login, schema = _page_state(html)
 
-        # Only charge a daily AI credit once we're actually calling the LLM —
-        # login/captcha/form_not_found bail out above without touching it.
-        enforce_limit(usage_store, user_id, get_settings().daily_ai_limit)
+        # Only a BARE login wall — a sign-in page with no form and no readable
+        # posting — forces the user to log in. If we can read the job (even when
+        # the page also shows an optional sign-in, like Siemens/Avature portals),
+        # we optimize and deliver instead of looping on login.
         job_text = _job_text(html)
+        if is_login and len(job_text) < MIN_JOB_TEXT:
+            logger.warning("[apply] prepare url=%s -> login_required "
+                           "(bare login wall, job_text=%d)", url, len(job_text))
+            return {"status": "login_required"}
+
+        # The page IS usable. Optimize + answer in one LLM call regardless of
+        # captcha/form presence; `status` only signals whether auto-submit works.
+        if detect_captcha(html):
+            status = "captcha"
+        elif not schema.fields:
+            status = "form_not_found"
+        else:
+            status = "ready"
+
+        # Charge one AI credit now that we're actually calling the LLM.
+        enforce_limit(usage_store, user_id, get_settings().daily_ai_limit)
         user_payload = PrepareIn(cv=cv, job_text=job_text,
                                  form=schema.fields).model_dump_json()
         out = llm.chat_json(MODEL_SMART, SYSTEM.format(language=language),
                             user_payload, PrepareOut)
         return {
-            "status": "ready",
+            "status": status,
             "form": [f.model_dump() for f in schema.fields],
             "cv": out.cv.model_dump(),
             "changes": out.changes,
@@ -187,3 +244,43 @@ def submit_application(cv: CVData, url: str, language: str,
         if driver is not None:
             driver.close()
         Path(tmp.name).unlink(missing_ok=True)
+
+
+def assist_fill(session, cv: CVData, language: str,
+                llm: LLMClient, user_id: str) -> dict:
+    """Fill the CURRENT live page of an assisted session. Reads whatever the
+    user navigated to; if there's a fillable form, answers its real fields."""
+    html = session.snapshot()
+    schema = extract_form(html)
+    if not schema.fields:
+        logger.warning("[assist] no_form (html=%d chars) %s",
+                       len(html), form_debug(html))
+        return {"status": "no_form"}
+    # Real form present: charge one credit, then answer + fill.
+    enforce_limit(usage_store, user_id, get_settings().daily_ai_limit)
+    job_text = _job_text(html)
+    user_payload = AssistIn(cv=cv, job_text=job_text,
+                            form=schema.fields).model_dump_json()
+    out = llm.chat_json(MODEL_SMART, ASSIST_SYSTEM.format(language=language),
+                        user_payload, AnswersOut)
+    pdf_bytes = ats.render_pdf(cv, language)
+    tmp = tempfile.NamedTemporaryFile(suffix=".pdf", delete=False)
+    tmp.write(pdf_bytes)
+    tmp.close()
+    try:
+        session.fill_form(schema, out.answers, tmp.name)
+        shot = base64.b64encode(session.screenshot()).decode()
+    finally:
+        # Unlike submit_application, the assisted browser stays open, so it still
+        # holds the uploaded PDF (Windows locks it). A successful fill must not
+        # be reported as a failure over a leftover temp file.
+        try:
+            Path(tmp.name).unlink(missing_ok=True)
+        except OSError as exc:
+            logger.warning("temp PDF still held by the browser, leaving it "
+                           "to the OS temp dir: %s (%s)", tmp.name, exc)
+    values = {a.field_id: a.value for a in out.answers}
+    filled = [{"label": f.label, "value": values.get(f.id, "")}
+              for f in schema.fields if f.type != "file"]
+    return {"status": "filled", "filled": filled,
+            "field_count": len(schema.fields), "screenshot": shot}

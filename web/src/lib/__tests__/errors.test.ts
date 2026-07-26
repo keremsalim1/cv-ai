@@ -5,6 +5,10 @@ it('maps known codes to their message key', () => {
   expect(messageKeyForCode('DAILY_LIMIT_REACHED')).toBe('errors.DAILY_LIMIT_REACHED')
 })
 
+it('explains a server at browser capacity instead of falling back to UNKNOWN', () => {
+  expect(messageKeyForCode('TOO_MANY_SESSIONS')).toBe('errors.TOO_MANY_SESSIONS')
+})
+
 it('falls back to UNKNOWN for unrecognized codes', () => {
   expect(messageKeyForCode('SOMETHING_ELSE')).toBe('errors.UNKNOWN')
 })

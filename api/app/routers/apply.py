@@ -1,11 +1,16 @@
+import logging
+
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
 from app.auth import get_current_user
 from app.schemas import CVData, FieldAnswer
-from app.services.apply import prepare_application, submit_application
+from app.services.apply import assist_fill, prepare_application, submit_application
 from app.services.browser import get_driver_factory
 from app.services.llm import LLMClient, get_llm
+from app.services.session import get_session_factory, session_manager
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/apply", tags=["apply"])
 
@@ -46,3 +51,59 @@ def submit(
 ):
     return submit_application(req.cv, req.url, req.language, req.answers,
                               req.headed, make_driver)
+
+
+# --- Assisted apply: a persistent headed browser the user drives themselves ---
+
+
+class AssistStartRequest(BaseModel):
+    url: str
+
+
+@router.post("/assist/start")
+def assist_start(
+    req: AssistStartRequest,
+    user_id: str = Depends(get_current_user),
+    make_session=Depends(get_session_factory),
+):
+    sid = session_manager.start(make_session, req.url, user_id)
+    logger.warning("[assist] start url=%s -> session=%s (live=%d)",
+                   req.url, sid, session_manager.live_count())
+    return {"session_id": sid}
+
+
+class AssistFillRequest(BaseModel):
+    session_id: str
+    cv: CVData
+    language: str = "tr"
+
+
+@router.post("/assist/fill")
+def assist_fill_route(
+    req: AssistFillRequest,
+    user_id: str = Depends(get_current_user),
+    llm: LLMClient = Depends(get_llm),
+):
+    logger.warning("[assist] fill session=%s (live=%d)", req.session_id,
+                   session_manager.live_count())
+    session = session_manager.get(req.session_id, user_id)
+    try:
+        out = assist_fill(session, req.cv, req.language, llm, user_id)
+    except Exception:
+        logger.exception("[assist] fill FAILED session=%s", req.session_id)
+        raise
+    logger.warning("[assist] fill -> %s", out.get("status"))
+    return out
+
+
+class AssistCloseRequest(BaseModel):
+    session_id: str
+
+
+@router.post("/assist/close")
+def assist_close(
+    req: AssistCloseRequest,
+    user_id: str = Depends(get_current_user),
+):
+    session_manager.close(req.session_id, user_id)
+    return {"ok": True}

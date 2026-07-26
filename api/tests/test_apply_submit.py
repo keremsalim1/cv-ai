@@ -39,7 +39,7 @@ def test_submit_fills_and_submits(client, auth_headers):
     body = r.json()
     assert body["status"] == "submitted"
     assert base64.b64decode(body["screenshot"]).startswith(b"\x89PNG")
-    filled = dict(driver.fills)
+    filled = {sel: val for sel, val, _frame in driver.fills}
     # the full-name input is targeted by its id (<input id="fn" name="full_name">)
     assert filled['//*[@id="fn"]'] == "Ada Lovelace"
     assert ("I love APIs." in filled.values())

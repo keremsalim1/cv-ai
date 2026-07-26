@@ -22,9 +22,14 @@ class Settings(BaseSettings):
     supabase_jwt_secret: str = "insecure-test-secret-change-in-prod-0123456789"
     daily_ai_limit: int = 20
 
-    # Persistent Chromium profile for /apply: user logins on job sites survive
-    # between prepare/submit calls. Never stores passwords ourselves.
+    # Base dir for persistent Chromium profiles; each user gets their own
+    # subdirectory (see browser.profile_dir_for) so their logins on job sites
+    # survive between calls without ever being visible to another user. We never
+    # store passwords ourselves.
     browser_profile_dir: str = ".browser-profile"
+    # Each assisted-apply browser costs ~300-500MB, so the box can only host a
+    # handful at once. Raise it only alongside the RAM to back it.
+    max_browser_sessions: int = 4
 
     model_config = {"env_file": ".env"}
 

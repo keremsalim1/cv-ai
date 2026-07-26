@@ -14,7 +14,7 @@ it('tr and en have identical message keys', () => {
 it('all backend error codes are localized', () => {
   const codes = ['SCANNED_PDF', 'INVALID_PDF', 'FILE_TOO_LARGE', 'FETCH_FAILED',
     'NO_INPUT', 'DAILY_LIMIT_REACHED', 'AI_UNAVAILABLE', 'NOT_AUTHENTICATED',
-    'SESSION_NOT_FOUND', 'FORBIDDEN', 'UNKNOWN']
+    'SESSION_NOT_FOUND', 'FORBIDDEN', 'TOO_MANY_SESSIONS', 'UNKNOWN']
   for (const code of codes) {
     expect(tr.errors).toHaveProperty(code)
     expect(en.errors).toHaveProperty(code)

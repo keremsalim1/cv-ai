@@ -68,7 +68,7 @@ def assist_start(
 ):
     sid = session_manager.start(make_session, req.url, user_id)
     logger.warning("[assist] start url=%s -> session=%s (live=%d)",
-                   req.url, sid, len(session_manager._sessions))
+                   req.url, sid, session_manager.live_count())
     return {"session_id": sid}
 
 
@@ -85,7 +85,7 @@ def assist_fill_route(
     llm: LLMClient = Depends(get_llm),
 ):
     logger.warning("[assist] fill session=%s (live=%d)", req.session_id,
-                   len(session_manager._sessions))
+                   session_manager.live_count())
     session = session_manager.get(req.session_id, user_id)
     try:
         out = assist_fill(session, req.cv, req.language, llm, user_id)

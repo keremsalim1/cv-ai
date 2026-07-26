@@ -15,6 +15,7 @@ from app.services.form_build import build_form
 from app.services.llm import MODEL_SMART, LLMClient
 from app.services.page_analysis import (detect_captcha, detect_login,
                                         extract_form)
+from app.services.platforms import platform_for
 from app.services.usage import enforce_limit, usage_store
 
 logger = logging.getLogger(__name__)
@@ -261,7 +262,7 @@ def assist_fill(session, cv: CVData, language: str,
     user navigated to by role, so shadow DOM and custom widgets are visible
     where parsing the HTML string saw nothing."""
     controls = session.probe()
-    schema = build_form(controls)
+    schema = build_form(controls, platform_for(session.url()))
     if not schema.fields:
         html = session.snapshot()
         reason = _no_form_reason(html, controls)

@@ -211,6 +211,31 @@ def test_assist_fill_names_a_login_wall_as_the_reason(client, auth_headers):
     assert r.json()["reason"] == "login_wall"
 
 
+def test_a_registered_platform_overrides_the_generic_scope(client, auth_headers,
+                                                           monkeypatch):
+    import app.services.platforms as platforms_mod
+    monkeypatch.setattr(platforms_mod, "REGISTRY", (platforms_mod.Platform(
+        name="test", hosts=("jobs.example.com",), scope_landmark="main"),))
+    # generic rules would scope to the dialog; the platform pins main
+    inventory = [
+        {"ref": "0-1", "frame": 0, "role": "textbox", "name": "consent",
+         "label_text": "Cookie consent", "landmark": "dialog"},
+        {"ref": "0-2", "frame": 0, "role": "textbox", "name": "motivation",
+         "label_text": "Motivation", "landmark": "main"},
+    ]
+    _use_session(FakeDriver([FORM_HTML], evaluations=[
+        inventory,
+        [{**inventory[0]}, {**inventory[1], "value": "I love APIs."}],
+    ]))
+    override_llm([json.dumps({"answers": [
+        {"field_id": "motivation", "value": "I love APIs."}]})])
+    sid = _start(client, auth_headers)
+    r = client.post("/apply/assist/fill", headers=auth_headers,
+                    json={"session_id": sid, "cv": json.loads(SAMPLE_CV_JSON),
+                          "language": "en"})
+    assert r.json()["field_count"] == 1
+
+
 def test_assist_fill_rejects_other_users_session(client, auth_headers):
     _use_session(FakeDriver([FORM_HTML], evaluations=[FORM_INVENTORY]))
     sid = _start(client, auth_headers)

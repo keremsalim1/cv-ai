@@ -47,13 +47,29 @@ class PlaywrightDriver:
         self._page = self._context.pages[0] if self._context.pages else self._context.new_page()
         self._page.set_default_timeout(15_000)
 
+    @property
+    def _live(self):
+        """In assisted mode the user drives this browser by hand: portals open
+        the application in a new tab, and the tab we started on is abandoned or
+        closed. Resolve the page per call, newest first, so we always act on
+        what the user is actually looking at."""
+        for page in reversed(self._context.pages):
+            if page.is_closed():
+                continue
+            if page is not self._page:
+                page.set_default_timeout(15_000)
+                self._page = page
+            return page
+        return self._page      # nothing left alive; let the caller see the error
+
     def goto(self, url: str) -> None:
-        self._page.goto(url, wait_until="domcontentloaded", timeout=30_000)
+        page = self._live
+        page.goto(url, wait_until="domcontentloaded", timeout=30_000)
         # let client-side apps (Greenhouse, Lever) render the form
-        self._page.wait_for_timeout(2_000)
+        page.wait_for_timeout(2_000)
 
     def content(self) -> str:
-        return self._page.content()
+        return self._live.content()
 
     def _loc(self, selector: str, frame: int):
         # page.frames[0] IS the main frame, so one path serves both cases.
@@ -61,16 +77,16 @@ class PlaywrightDriver:
         # getpath() yields "/html/body/..." with a single slash, which would be
         # parsed as CSS. Prefix explicitly so the auto flow's paths keep working
         # alongside the probe's "[data-cvai-ref=...]" CSS refs.
-        target = self._page.frames[frame]
+        target = self._live.frames[frame]
         if selector.startswith("/") or selector.startswith(".."):
             return target.locator(f"xpath={selector}")
         return target.locator(selector)
 
     def evaluate(self, script: str, frame: int = 0):
-        return self._page.frames[frame].evaluate(script)
+        return self._live.frames[frame].evaluate(script)
 
     def frame_count(self) -> int:
-        return len(self._page.frames)
+        return len(self._live.frames)
 
     def fill(self, selector: str, value: str, frame: int = 0) -> None:
         self._loc(selector, frame).fill(value)
@@ -90,10 +106,10 @@ class PlaywrightDriver:
         self._loc(selector, frame).set_input_files(path)
 
     def wait(self, ms: int) -> None:
-        self._page.wait_for_timeout(ms)
+        self._live.wait_for_timeout(ms)
 
     def screenshot(self) -> bytes:
-        return self._page.screenshot(full_page=False)
+        return self._live.screenshot(full_page=False)
 
     def close(self) -> None:
         try:

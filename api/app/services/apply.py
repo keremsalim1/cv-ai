@@ -264,7 +264,13 @@ def assist_fill(session, cv: CVData, language: str,
     controls = session.probe()
     schema = build_form(controls, platform_for(session.url()))
     if not schema.fields:
-        html = session.snapshot()
+        try:
+            html = session.snapshot()
+        except Exception as exc:
+            # probe() already tolerated this page being gone; reading it again
+            # to explain ourselves must not turn the same failure into a 500.
+            logger.warning("[assist] no_form reason=browser_closed: %s", exc)
+            return {"status": "no_form", "reason": "browser_closed"}
         reason = _no_form_reason(html, controls)
         logger.warning("[assist] no_form reason=%s controls=%d",
                        reason, len(controls))

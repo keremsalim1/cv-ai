@@ -51,6 +51,12 @@ it('explains a captcha as its own reason', () => {
   expect(screen.getByText(/doğrulama/i)).toBeInTheDocument()
 })
 
+it('tells the user to reopen the browser when they closed it', () => {
+  renderWithIntl(<AssistScreen result={{ status: 'no_form', reason: 'browser_closed' }}
+    busy={false} onFill={vi.fn()} onFinish={vi.fn()} />)
+  expect(screen.getByText(/tarayıcı penceresi kapanmış/)).toBeInTheDocument()
+})
+
 it('finish button triggers onFinish', async () => {
   const onFinish = vi.fn()
   renderWithIntl(<AssistScreen result={null} busy={false} onFill={vi.fn()} onFinish={onFinish} />)

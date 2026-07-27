@@ -51,6 +51,13 @@ it('explains a captcha as its own reason', () => {
   expect(screen.getByText(/doğrulama/i)).toBeInTheDocument()
 })
 
+it('does not tell a blocked user to go find the form', () => {
+  renderWithIntl(<AssistScreen result={{ status: 'no_form', reason: 'blocked' }}
+    busy={false} onFill={vi.fn()} onFinish={vi.fn()} />)
+  expect(screen.getByText(/erişimimizi engelledi/)).toBeInTheDocument()
+  expect(screen.queryByText(/doldurulacak alan bulamadım/)).not.toBeInTheDocument()
+})
+
 it('tells the user to reopen the browser when they closed it', () => {
   renderWithIntl(<AssistScreen result={{ status: 'no_form', reason: 'browser_closed' }}
     busy={false} onFill={vi.fn()} onFinish={vi.fn()} />)

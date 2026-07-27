@@ -201,6 +201,23 @@ def test_assist_fill_says_why_it_found_no_form(client, auth_headers):
     assert body["reason"] == "no_controls"
 
 
+BLOCKED_HTML = ('<html><body><div id="cf-box-container"><h1>Blocked</h1>'
+                '<p>Ray ID: a21c2635ebaa1a64</p></div>'
+                '<script src="/cdn-cgi/challenge-platform/scripts/jsd/main.js">'
+                '</script></body></html>')
+
+
+def test_a_blocked_page_is_not_reported_as_a_missing_form(client, auth_headers):
+    _use_session(FakeDriver([BLOCKED_HTML], evaluations=[[]]))
+    sid = _start(client, auth_headers)
+    r = client.post("/apply/assist/fill", headers=auth_headers,
+                    json={"session_id": sid, "cv": json.loads(SAMPLE_CV_JSON),
+                          "language": "en"})
+    body = r.json()
+    assert body["status"] == "no_form"
+    assert body["reason"] == "blocked"
+
+
 def test_a_browser_the_user_closed_is_reported_not_raised(client, auth_headers):
     """The probe already tolerates a page that is gone; the reason lookup right
     after it must not turn the same failure into a 500."""

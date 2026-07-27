@@ -11,6 +11,7 @@ const REASON_KEYS: Record<AssistNoFormReason, string> = {
   no_controls: 'assistReasonNoControls',
   unsupported: 'assistReasonUnsupported',
   browser_closed: 'assistReasonBrowserClosed',
+  blocked: 'assistReasonBlocked',
 }
 
 export function AssistScreen({ result, busy, onFill, onFinish }: {

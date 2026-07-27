@@ -13,8 +13,8 @@ from app.services import ats
 from app.services.browser import BrowserDriver
 from app.services.form_build import build_form
 from app.services.llm import MODEL_SMART, LLMClient
-from app.services.page_analysis import (detect_captcha, detect_login,
-                                        extract_form)
+from app.services.page_analysis import (detect_blocked, detect_captcha,
+                                        detect_login, extract_form)
 from app.services.platforms import platform_for
 from app.services.usage import enforce_limit, usage_store
 
@@ -251,6 +251,8 @@ def submit_application(cv: CVData, url: str, language: str,
 def _no_form_reason(html: str, controls: list) -> str:
     if detect_captcha(html):
         return "captcha"
+    if detect_blocked(html):
+        return "blocked"
     if detect_login(html):
         return "login_wall"
     return "no_controls" if not controls else "unsupported"

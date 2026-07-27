@@ -100,7 +100,7 @@ export type SubmitResult =
   | { status: 'captcha' }
 
 export type AssistNoFormReason =
-  'login_wall' | 'captcha' | 'no_controls' | 'unsupported' | 'browser_closed'
+  'login_wall' | 'captcha' | 'no_controls' | 'unsupported' | 'browser_closed' | 'blocked'
 
 export type AssistFillResult =
   | {

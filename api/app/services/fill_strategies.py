@@ -79,8 +79,9 @@ def fill_field(driver, field: FormField, value: str, pdf_path: str) -> FieldOutc
 
 # Only these read their value back reliably. A combobox commonly stores its
 # selection in a hidden node the collector never sees, so silence about them is
-# not evidence of failure.
-VERIFIABLE_TYPES = ("text", "textarea", "date", "select")
+# not evidence of failure. A file input is verifiable too, but differently: it
+# reads back as C:\fakepath\<name> rather than as anything we asked for.
+VERIFIABLE_TYPES = ("text", "textarea", "date", "select", "file")
 
 
 def fill_and_verify(driver, schema, answers, pdf_path: str) -> list[FieldOutcome]:
@@ -105,6 +106,14 @@ def fill_and_verify(driver, schema, answers, pdf_path: str) -> list[FieldOutcome
         control = after.get(field.selector.split('"')[1])
         if control is None:
             continue                       # re-rendered away; cannot judge
+        if field.type == "file":
+            # An empty input after a successful set_files means the portal
+            # replaced the control while parsing the CV. That is exactly how a
+            # resume goes missing while we report success.
+            if not control.value:
+                out.status = "failed"
+                out.reason = "the upload did not stay on the field"
+            continue
         if out.value.casefold() not in (control.value or "").casefold():
             out.status = "failed"
             out.reason = "the control did not take the value"

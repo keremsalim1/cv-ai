@@ -96,6 +96,24 @@ def test_field_ids_stay_unique_when_labels_repeat():
     assert len({f.id for f in form.fields}) == 2
 
 
+def test_an_unlabelled_dropzone_loses_to_the_labelled_resume_field():
+    # Ashby renders an "autofill from your resume" dropzone above the real
+    # Resume field. Uploading into it makes the portal re-parse the CV and
+    # re-render the form, which wipes the field the user actually applies with.
+    form = build_form([
+        c(ref="0-1", role="file"),
+        c(ref="0-4", role="file", label_text="Resume"),
+    ])
+    assert [f.label for f in form.fields] == ["Resume"]
+
+
+def test_a_lone_unlabelled_file_input_is_still_the_resume_field():
+    # Many portals label the upload only in surrounding prose; with nothing to
+    # compare against, the one file input we can see is the one to use.
+    form = build_form([c(ref="0-1", role="file")])
+    assert [f.type for f in form.fields] == ["file"]
+
+
 def test_a_popup_option_is_not_mistaken_for_a_field():
     # the collector reports role=option so fill strategies can find popups; they
     # are choices, not questions, and must never reach the LLM as fields

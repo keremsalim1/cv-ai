@@ -201,6 +201,25 @@ def test_assist_fill_says_why_it_found_no_form(client, auth_headers):
     assert body["reason"] == "no_controls"
 
 
+def test_a_browser_the_user_closed_is_reported_not_raised(client, auth_headers):
+    """The probe already tolerates a page that is gone; the reason lookup right
+    after it must not turn the same failure into a 500."""
+    class DeadDriver(FakeDriver):
+        def content(self):
+            raise RuntimeError(
+                "Page.content: Target page, context or browser has been closed")
+
+    _use_session(DeadDriver([NO_FORM_HTML], evaluations=[[]]))
+    sid = _start(client, auth_headers)
+    r = client.post("/apply/assist/fill", headers=auth_headers,
+                    json={"session_id": sid, "cv": json.loads(SAMPLE_CV_JSON),
+                          "language": "en"})
+    assert r.status_code == 200
+    body = r.json()
+    assert body["status"] == "no_form"
+    assert body["reason"] == "browser_closed"
+
+
 def test_assist_fill_names_a_login_wall_as_the_reason(client, auth_headers):
     login_html = "<html><body><form><input type='password'></form></body></html>"
     _use_session(FakeDriver([login_html], evaluations=[[]]))

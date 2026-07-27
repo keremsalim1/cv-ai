@@ -10,6 +10,7 @@ const REASON_KEYS: Record<AssistNoFormReason, string> = {
   captcha: 'assistReasonCaptcha',
   no_controls: 'assistReasonNoControls',
   unsupported: 'assistReasonUnsupported',
+  browser_closed: 'assistReasonBrowserClosed',
 }
 
 export function AssistScreen({ result, busy, onFill, onFinish }: {

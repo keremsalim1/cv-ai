@@ -99,7 +99,8 @@ export type SubmitResult =
   | { status: 'login_required' }
   | { status: 'captcha' }
 
-export type AssistNoFormReason = 'login_wall' | 'captcha' | 'no_controls' | 'unsupported'
+export type AssistNoFormReason =
+  'login_wall' | 'captcha' | 'no_controls' | 'unsupported' | 'browser_closed'
 
 export type AssistFillResult =
   | {

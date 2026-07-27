@@ -133,6 +133,7 @@
     "assistReasonCaptcha": "This page has a captcha. Clear it and try again.",
     "assistReasonNoControls": "I found no fillable fields here. Move to the application form and try again.",
     "assistReasonUnsupported": "I could not read this page's structure.",
+    "assistReasonBrowserClosed": "The browser window opened for this application has closed. Press \"Finish\" and start the assisted application again.",
     "assistFilledCount": "{count} fields filled",
     "assistReviewNote": "Review the fields in the real browser and submit there yourself. If there's another step, click \"Fill form\" again.",
     "assistFinish": "Finish"

@@ -132,6 +132,28 @@ def test_verification_never_downgrades_a_skipped_or_failed_field():
     assert outcomes[0].status == "skipped"
 
 
+def test_an_upload_that_never_reached_the_input_is_reported_as_failed():
+    # set_files can report success and still leave the control empty: a portal
+    # that re-renders the form after parsing a CV replaces the input underneath
+    # us. Reporting that as "filled" is how a CV goes missing silently.
+    schema = FormSchema(fields=[field(id="resume", type="file", label="Resume")])
+    d = FakeDriver(["<html></html>"], evaluations=[
+        [{"ref": "0-1", "role": "file", "value": "", "frame": 0}],
+    ])
+    outcomes = fill_and_verify(d, schema, [], "/tmp/cv.pdf")
+    assert outcomes[0].status == "failed"
+    assert "upload" in outcomes[0].reason
+
+
+def test_an_upload_the_input_is_holding_stays_filled():
+    schema = FormSchema(fields=[field(id="resume", type="file", label="Resume")])
+    d = FakeDriver(["<html></html>"], evaluations=[
+        [{"ref": "0-1", "role": "file", "value": r"C:\fakepath\cv.pdf", "frame": 0}],
+    ])
+    outcomes = fill_and_verify(d, schema, [], "/tmp/cv.pdf")
+    assert outcomes[0].status == "filled"
+
+
 def test_a_widget_we_cannot_read_back_is_left_as_filled():
     # comboboxes often keep their value in a hidden node; absence of evidence
     # must not be reported as evidence of failure

@@ -49,6 +49,18 @@ def _field_type(control: RawControl) -> str | None:
     return None
 
 
+def _dropzone_refs(controls: list[RawControl]) -> set[str]:
+    """Unlabelled file inputs that sit beside a labelled one. Portals like Ashby
+    put an "autofill from your resume" dropzone above the real Resume field;
+    uploading there makes them re-parse the CV and re-render the form, which
+    empties the field the user actually applies with. A file input that is the
+    only one we can see IS the resume field, label or not."""
+    files = [c for c in controls if _field_type(c) == "file"]
+    if not any(accessible_name(c) for c in files):
+        return set()
+    return {c.ref for c in files if not accessible_name(c)}
+
+
 def _in_scope(controls: list[RawControl], platform=None) -> list[RawControl]:
     usable = [c for c in controls
               if c.visible and not c.disabled
@@ -76,9 +88,11 @@ def build_form(controls: list[RawControl], platform=None) -> FormSchema:
         used_ids.add(candidate)
         return candidate
 
-    for control in _in_scope(controls, platform):
+    scoped = _in_scope(controls, platform)
+    dropzones = _dropzone_refs(scoped)
+    for control in scoped:
         ftype = _field_type(control)
-        if ftype is None:
+        if ftype is None or control.ref in dropzones:
             continue
         label = accessible_name(control)
         selector = f'[data-cvai-ref="{control.ref}"]'

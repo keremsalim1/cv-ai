@@ -22,6 +22,13 @@ class Settings(BaseSettings):
     supabase_jwt_secret: str = "insecure-test-secret-change-in-prod-0123456789"
     daily_ai_limit: int = 20
 
+    # The inbox feature is the only server-side database consumer. It needs the
+    # service role because the Gmail refresh token must be unreadable by any
+    # browser, which means no RLS policy can grant access to it. Every query
+    # this key issues filters on user_id explicitly — see supabase_db callers.
+    supabase_url: str = ""
+    supabase_service_key: str = ""
+
     # Base dir for persistent Chromium profiles; each user gets their own
     # subdirectory (see browser.profile_dir_for) so their logins on job sites
     # survive between calls without ever being visible to another user. We never

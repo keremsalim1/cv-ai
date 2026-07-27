@@ -65,3 +65,28 @@ def test_an_error_response_raises_with_the_body_visible():
 
     with pytest.raises(RuntimeError, match="column does not exist"):
         make_db(handler).select("applications", {})
+
+
+def test_empty_response_body_returns_empty_list():
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(204)  # No body, like DELETE without Prefer: return=representation
+
+    rows = make_db(handler).select("applications", {})
+    assert rows == []
+
+
+def test_bare_object_response_is_wrapped_in_list():
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json={"id": "x"})
+
+    rows = make_db(handler).select("applications", {})
+    assert rows == [{"id": "x"}]
+
+
+def test_delete_sends_delete_request_with_params():
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.method == "DELETE"
+        assert dict(request.url.params) == {"id": "eq.a1"}
+        return httpx.Response(204)
+
+    make_db(handler).delete("applications", {"id": "eq.a1"})

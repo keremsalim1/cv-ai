@@ -76,15 +76,21 @@ def connect_gmail(db, http, user_id: str, code: str, redirect_uri: str) -> dict:
         raise ConnectionError_(f"Gmail profile unreadable: {profile.text}")
     info = profile.json()
 
-    db.delete("email_connections", {"user_id": f"eq.{user_id}"})
-    db.insert("email_connections", {
-        "user_id": user_id,
+    fields = {
         "provider": "gmail",
         "email_address": info["emailAddress"],
         "refresh_token_enc": encrypt_token(refresh),
         "last_history_id": info.get("historyId"),
         "status": "active",
-    })
+    }
+    # user_id is the table's primary key: at most one row per user. Replace it
+    # in place rather than delete-then-insert, so a failed insert after a
+    # successful delete can never leave the user with a working connection
+    # deleted and nothing to show for it.
+    if _connection(db, user_id):
+        db.update("email_connections", {"user_id": f"eq.{user_id}"}, fields)
+    else:
+        db.insert("email_connections", {"user_id": user_id, **fields})
     return {"connected": True, "email": info["emailAddress"]}
 
 
@@ -117,17 +123,34 @@ def access_token_for(db, http, user_id: str) -> str:
     row = _connection(db, user_id)
     if not row:
         raise ConnectionError_("no Gmail connection for this user")
+    try:
+        refresh = decrypt_token(row["refresh_token_enc"])
+    except TokenError as exc:
+        # Every caller of this function catches ConnectionError_ to mean
+        # "reconnect needed"; a bare TokenError would surface as an
+        # unhandled 500 instead of that explanation.
+        raise ConnectionError_(f"stored Gmail token is unreadable: {exc}") from exc
+
     settings = get_settings()
     resp = http.post(TOKEN_URL, data={
-        "refresh_token": decrypt_token(row["refresh_token_enc"]),
+        "refresh_token": refresh,
         "client_id": settings.google_client_id,
         "client_secret": settings.google_client_secret,
         "grant_type": "refresh_token",
     })
     if resp.status_code >= 400:
-        # invalid_grant means the user revoked us at Google. Record that, so the
-        # UI can say so instead of silently returning stale stages forever.
-        db.update("email_connections", {"user_id": f"eq.{user_id}"},
-                  {"status": "revoked"})
-        raise ConnectionError_(f"Gmail grant is no longer valid: {resp.text}")
+        try:
+            error = resp.json().get("error")
+        except ValueError:
+            error = None
+        if error == "invalid_grant":
+            # invalid_grant means the user revoked us at Google. Record that,
+            # so the UI can say so instead of silently returning stale stages
+            # forever. Any other error (429, 5xx, network hiccup) is
+            # transient — we must not mark a working connection revoked
+            # because Google had a bad moment.
+            db.update("email_connections", {"user_id": f"eq.{user_id}"},
+                      {"status": "revoked"})
+            raise ConnectionError_(f"Gmail grant is no longer valid: {resp.text}")
+        raise ConnectionError_(f"Gmail token refresh failed: {resp.text}")
     return resp.json()["access_token"]

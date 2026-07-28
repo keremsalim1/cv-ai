@@ -1,5 +1,8 @@
+import httpx
+import pytest
+
 from app.services.mailbox import GmailSource, build_query
-from tests.fake_gmail import FakeGmail, message
+from tests.fake_gmail import FakeGmail, message, part
 
 
 def test_the_query_narrows_on_ats_senders_and_application_words():
@@ -104,3 +107,146 @@ def test_a_quota_error_on_the_profile_call_still_returns_fetched_messages():
     assert [m.message_id for m in result.messages] == ["m1"]
     assert result.partial is True
     assert result.cursor is None
+
+
+# --- Pagination ---------------------------------------------------------
+
+def test_pagination_across_pages_of_the_message_listing():
+    gmail = FakeGmail([message("m1"), message("m2")], list_pages=[["m1"], ["m2"]])
+    result = GmailSource(gmail.client(), "at").fetch_new(None)
+
+    assert sorted(m.message_id for m in result.messages) == ["m1", "m2"]
+    assert result.partial is False
+    assert result.cursor == "9100"
+
+
+def test_a_quota_error_on_the_second_listing_page_keeps_the_first_pages_messages():
+    gmail = FakeGmail([message("m1"), message("m2")], list_pages=[["m1"], ["m2"]],
+                       list_quota_on_page=1)
+    result = GmailSource(gmail.client(), "at").fetch_new(None)
+
+    assert [m.message_id for m in result.messages] == ["m1"]
+    assert result.partial is True
+    assert result.cursor is None
+
+
+def test_history_pagination_only_advances_the_cursor_after_the_last_page():
+    pages = [
+        {"history": [{"messagesAdded": [{"message": {"id": "m1", "threadId": "t1"}}]}],
+         "historyId": "9400"},
+        {"history": [{"messagesAdded": [{"message": {"id": "m2", "threadId": "t1"}}]}],
+         "historyId": "9400"},
+    ]
+    gmail = FakeGmail([message("m1"), message("m2")], history_pages=pages)
+    result = GmailSource(gmail.client(), "at").fetch_new("9100")
+
+    assert sorted(m.message_id for m in result.messages) == ["m1", "m2"]
+    assert result.cursor == "9400"
+    assert result.partial is False
+
+
+def test_pagination_is_capped_to_avoid_an_infinite_loop():
+    # A server that keeps handing back a token must not hang the sync.
+    pages = [[f"m{i}"] for i in range(60)]
+    msgs = [message(f"m{i}") for i in range(60)]
+    gmail = FakeGmail(msgs, list_pages=pages)
+    result = GmailSource(gmail.client(), "at").fetch_new(None)
+
+    assert len(result.messages) == 50   # the cap, not all 60
+    assert result.partial is True
+    assert result.cursor is None
+
+
+# --- One bad message must not sink the batch -----------------------------
+
+def test_a_message_that_404s_mid_batch_is_skipped_not_fatal():
+    gmail = FakeGmail([message("m1"), message("m2")], list_pages=[["m1", "ghost", "m2"]])
+    result = GmailSource(gmail.client(), "at").fetch_new(None)
+
+    assert [m.message_id for m in result.messages] == ["m1", "m2"]
+    assert result.partial is False
+
+
+def test_a_message_with_corrupt_base64_is_skipped_not_fatal():
+    corrupt = [{"mimeType": "text/plain", "body": {"data": "bad"}}]
+    gmail = FakeGmail([message("m1"), message("m2", parts=corrupt), message("m3")])
+    result = GmailSource(gmail.client(), "at").fetch_new(None)
+
+    assert [m.message_id for m in result.messages] == ["m1", "m3"]
+    assert result.partial is False
+
+
+def test_a_history_entry_without_a_message_id_is_skipped_not_fatal():
+    gmail = FakeGmail(
+        [message("m1")],
+        history={"historyId": "9200",
+                 "history": [{"messagesAdded": [
+                     {"message": {"threadId": "t1"}},               # no id — must not KeyError
+                     {"message": {"id": "m1", "threadId": "t1"}},
+                 ]}]},
+    )
+    result = GmailSource(gmail.client(), "9100").fetch_new("9100")
+
+    assert [m.message_id for m in result.messages] == ["m1"]
+    assert result.cursor == "9200"
+
+
+# --- Body extraction ------------------------------------------------------
+
+def test_body_extraction_finds_text_plain_nested_in_multipart():
+    nested = [part("multipart/alternative", parts=[
+        part("text/plain", data="Merhaba Ada, plain"),
+        part("text/html", data="<p>Merhaba <b>Ada</b>, html</p>"),
+    ])]
+    gmail = FakeGmail([message("m1", parts=nested)])
+    msg = GmailSource(gmail.client(), "at").fetch_new(None).messages[0]
+
+    assert msg.body == "Merhaba Ada, plain"
+
+
+def test_body_extraction_falls_back_to_html_when_no_plain_text_exists():
+    html_only = [part("text/html", data="<p>Hello <b>Ada</b>, welcome</p>")]
+    gmail = FakeGmail([message("m1", parts=html_only)])
+    msg = GmailSource(gmail.client(), "at").fetch_new(None).messages[0]
+
+    assert "Hello" in msg.body
+    assert "Ada" in msg.body
+    assert "<p>" not in msg.body
+    assert "<b>" not in msg.body
+
+
+def test_body_extraction_handles_a_non_multipart_message():
+    gmail = FakeGmail([message("m1", multipart=False, body="Plain body, no parts at all")])
+    msg = GmailSource(gmail.client(), "at").fetch_new(None).messages[0]
+
+    assert msg.body == "Plain body, no parts at all"
+
+
+def test_a_calendar_part_nested_one_level_deep_is_still_flagged():
+    nested = [
+        part("text/plain", data="hi"),
+        part("multipart/mixed", parts=[
+            part("text/calendar", data="BEGIN:VCALENDAR"),
+        ]),
+    ]
+    gmail = FakeGmail([message("m1", parts=nested)])
+    assert GmailSource(gmail.client(), "at").fetch_new(None).messages[0].has_calendar_invite
+
+
+# --- 403-shaped quota errors -----------------------------------------------
+
+def test_a_403_with_a_quota_reason_is_treated_as_a_quota_error():
+    gmail = FakeGmail([message("m1")], quota_on=frozenset({"list"}), quota_via_403=True)
+    result = GmailSource(gmail.client(), "at").fetch_new(None)
+
+    assert result.messages == []
+    assert result.partial is True
+    assert result.cursor is None
+
+
+def test_a_403_without_a_recognized_quota_reason_is_a_real_error():
+    gmail = FakeGmail([message("m1")], quota_on=frozenset({"list"}), quota_via_403=True,
+                       quota_reason="insufficientPermissions")
+
+    with pytest.raises(httpx.HTTPError):
+        GmailSource(gmail.client(), "at").fetch_new(None)

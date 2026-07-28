@@ -32,15 +32,19 @@ def message(msg_id: str, *, thread_id="t1", sender="no-reply@greenhouse.io",
 
 
 class FakeGmail:
-    """Serves list/history/get. Set `quota_after` to start returning 429."""
+    """Serves list/history/get. Set `quota_after` to start returning 429 from
+    per-message GETs after N calls. Set `quota_on` to make a specific endpoint
+    ("list", "history", or "profile") return 429 unconditionally."""
 
     def __init__(self, messages: list[dict], *, history=None, history_status=200,
-                 quota_after: int | None = None, profile_history_id="9100"):
+                 quota_after: int | None = None, profile_history_id="9100",
+                 quota_on: frozenset[str] = frozenset()):
         self.by_id = {m["id"]: m for m in messages}
         self.history = history
         self.history_status = history_status
         self.quota_after = quota_after
         self.profile_history_id = profile_history_id
+        self.quota_on = quota_on
         self.requests: list[httpx.Request] = []
 
     def client(self) -> httpx.Client:
@@ -49,6 +53,12 @@ class FakeGmail:
     def _handle(self, request: httpx.Request) -> httpx.Response:
         self.requests.append(request)
         path = request.url.path
+        if path.endswith("/messages") and "list" in self.quota_on:
+            return httpx.Response(429, json={"error": {"message": "rateLimitExceeded"}})
+        if path.endswith("/history") and "history" in self.quota_on:
+            return httpx.Response(429, json={"error": {"message": "rateLimitExceeded"}})
+        if path.endswith("/profile") and "profile" in self.quota_on:
+            return httpx.Response(429, json={"error": {"message": "rateLimitExceeded"}})
         gets = sum(1 for r in self.requests if "/messages/" in r.url.path)
         if self.quota_after is not None and gets > self.quota_after:
             return httpx.Response(429, json={"error": {"message": "rateLimitExceeded"}})

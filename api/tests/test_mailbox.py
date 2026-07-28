@@ -74,3 +74,33 @@ def test_history_with_no_new_messages_returns_nothing_and_advances_the_cursor():
 
     assert result.messages == []
     assert result.cursor == "9300"
+
+
+def test_a_quota_error_on_the_list_call_returns_an_empty_partial_result():
+    gmail = FakeGmail([message("m1")], quota_on=frozenset({"list"}))
+    result = GmailSource(gmail.client(), "at").fetch_new(None)
+
+    assert result.messages == []
+    assert result.partial is True
+    assert result.cursor is None
+
+
+def test_a_quota_error_on_history_does_not_fall_back_to_a_full_scan():
+    gmail = FakeGmail([message("m1")], quota_on=frozenset({"history"}))
+    result = GmailSource(gmail.client(), "at").fetch_new("9100")
+
+    assert result.messages == []
+    assert result.partial is True
+    assert result.cursor is None
+    # a quota error is not an expired cursor: it must not trigger the
+    # full-scan fallback, which would just hit the same quota again.
+    assert not any(r.url.path.endswith("/messages") for r in gmail.requests)
+
+
+def test_a_quota_error_on_the_profile_call_still_returns_fetched_messages():
+    gmail = FakeGmail([message("m1")], quota_on=frozenset({"profile"}))
+    result = GmailSource(gmail.client(), "at").fetch_new(None)
+
+    assert [m.message_id for m in result.messages] == ["m1"]
+    assert result.partial is True
+    assert result.cursor is None

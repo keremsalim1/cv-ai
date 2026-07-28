@@ -80,14 +80,25 @@ class GmailSource:
     # --- Public surface ------------------------------------------------
 
     def fetch_new(self, cursor: str | None) -> FetchResult:
-        if cursor:
-            try:
-                return self._incremental(cursor)
-            except httpx.HTTPError:
-                # Cursor aged out (Gmail keeps ~a week of history). A full scan
-                # is correct here, not an error the user should ever see.
-                logger.warning("[inbox] history cursor %s expired; full scan", cursor)
-        return self._full_scan()
+        try:
+            if cursor:
+                try:
+                    return self._incremental(cursor)
+                except httpx.HTTPError:
+                    # Cursor aged out (Gmail keeps ~a week of history). A full
+                    # scan is correct here, not an error the user should ever
+                    # see. Note _QuotaExceeded is deliberately not a subtype
+                    # of httpx.HTTPError, so a quota hit here falls through
+                    # to the outer handler instead of retrying as a full
+                    # scan, which would just hit the same quota again.
+                    logger.warning("[inbox] history cursor %s expired; full scan", cursor)
+            return self._full_scan()
+        except _QuotaExceeded:
+            # Nothing has been fetched yet (the list or history call itself
+            # was throttled) — report a clean partial result instead of
+            # letting the exception escape, and don't advance the cursor.
+            logger.warning("[inbox] gmail quota hit before any messages were read")
+            return FetchResult([], cursor=None, partial=True)
 
     def _full_scan(self) -> FetchResult:
         listing = self._get("/messages", {"q": build_query(), "maxResults": 200})
@@ -117,7 +128,15 @@ class GmailSource:
                 # sync re-reads the tail instead of skipping it.
                 logger.warning("[inbox] gmail quota hit after %d messages", len(messages))
                 return FetchResult(messages, cursor=None, partial=True)
-        cursor = self._get("/profile").get("historyId") if advance_cursor else None
+        if not advance_cursor:
+            return FetchResult(messages, cursor=None, partial=False)
+        try:
+            cursor = self._get("/profile").get("historyId")
+        except _QuotaExceeded:
+            # Messages are already in hand; don't discard them just because
+            # the trailing cursor lookup got throttled.
+            logger.warning("[inbox] gmail quota hit fetching profile after %d messages", len(messages))
+            return FetchResult(messages, cursor=None, partial=True)
         return FetchResult(messages, cursor=cursor, partial=False)
 
     def _one(self, msg_id: str) -> MailMessage:

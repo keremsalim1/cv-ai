@@ -3,8 +3,10 @@ from pathlib import Path
 
 import pytest
 
-from app.services.inbox_classify import classify_by_rules
+from app.services.inbox_classify import classify, classify_by_rules
+from app.services.llm import LLMClient, LLMError
 from app.services.mailbox import MailMessage
+from tests.conftest import FakeOpenAI
 
 CORPUS = json.loads(
     (Path(__file__).parent / "fixtures" / "mail" / "corpus.json").read_text(encoding="utf-8")
@@ -67,3 +69,62 @@ def test_a_calendar_invite_alone_is_not_enough_to_call_it_an_interview():
 def test_the_evidence_is_the_sentence_that_decided_it():
     signal = classify_by_rules(as_message(entries("rejected")[0]))
     assert "move forward with other candidates" in signal.evidence.lower()
+
+
+# --- The LLM fallback -----------------------------------------------------
+
+def llm_saying(payload: dict) -> LLMClient:
+    return LLMClient(FakeOpenAI([json.dumps(payload)]))
+
+
+def test_a_rule_hit_never_reaches_the_llm():
+    fake = FakeOpenAI([])          # popping from an empty list would raise
+    signal = classify(as_message(entries("rejected")[0]), LLMClient(fake))
+    assert signal.stage == "rejected"
+    assert fake.calls == []
+
+
+def test_ambiguous_mail_is_resolved_by_the_llm():
+    llm = llm_saying({"stage": "in_review", "company": "Acme", "title": "Backend Engineer",
+                      "confidence": 0.8, "evidence": "süreçle ilgili güncelleme",
+                      "job_related": True})
+    signal = classify(as_message(entries("unsure")[0]), llm)
+    assert signal.stage == "in_review"
+    assert signal.company == "Acme"
+
+
+def test_a_low_confidence_llm_answer_is_treated_as_unresolved():
+    llm = llm_saying({"stage": "offer", "company": None, "title": None,
+                      "confidence": 0.3, "evidence": "maybe", "job_related": True})
+    assert classify(as_message(entries("unsure")[0]), llm).stage is None
+
+
+def test_an_llm_answer_of_not_job_related_discards_the_mail():
+    llm = llm_saying({"stage": None, "company": None, "title": None,
+                      "confidence": 0.9, "evidence": "", "job_related": False})
+    signal = classify(as_message(entries("unsure")[0]), llm)
+    assert signal.job_related is False
+    assert signal.stage is None
+
+
+def test_an_llm_outage_leaves_the_stage_unresolved_instead_of_failing_the_sync():
+    class Broken:
+        def chat_json(self, *a, **k):
+            raise LLMError("no quota")
+
+    signal = classify(as_message(entries("unsure")[0]), Broken())
+    assert signal.stage is None
+    assert signal.job_related is True    # unknown, not disproven
+
+
+def test_no_llm_available_still_returns_a_signal():
+    assert classify(as_message(entries("unsure")[0]), None).stage is None
+
+
+def test_the_llm_is_told_the_exact_stage_vocabulary():
+    fake = FakeOpenAI([json.dumps({"stage": "received", "company": None, "title": None,
+                                   "confidence": 0.9, "evidence": "x", "job_related": True})])
+    classify(as_message(entries("unsure")[0]), LLMClient(fake))
+    system = fake.calls[0]["messages"][0]["content"]
+    for stage in ("received", "in_review", "interview", "offer", "rejected"):
+        assert stage in system

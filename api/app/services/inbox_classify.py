@@ -5,11 +5,17 @@ classifiable for free. The LLM (added in the next task) only sees what the rules
 cannot settle. Silence is a valid answer — a wrong badge costs the user more
 than a missing one.
 """
+import logging
 import re
 from dataclasses import dataclass
 from typing import Literal
 
+from pydantic import BaseModel
+
+from app.services.llm import MODEL_FAST, LLMClient, LLMError
 from app.services.mailbox import ATS_DOMAINS, MailMessage
+
+logger = logging.getLogger(__name__)
 
 Stage = Literal["received", "in_review", "interview", "offer", "rejected"]
 
@@ -138,3 +144,76 @@ def _company_hint(msg: MailMessage) -> str | None:
     if _from_ats(msg):
         return None          # the ATS domain names the vendor, not the employer
     return domain.split(".")[0].title() or None
+
+
+# --- The LLM fallback -----------------------------------------------------
+
+MIN_CONFIDENCE = 0.6
+
+CLASSIFY_SYSTEM = """You read one email and decide what it says about a job application.
+
+Reply with JSON only:
+{"stage": one of "received" | "in_review" | "interview" | "offer" | "rejected" | null,
+ "company": employer name or null,
+ "title": job title or null,
+ "confidence": 0.0-1.0,
+ "evidence": the single sentence from the email that decided it,
+ "job_related": true if this is a response to a job application the reader made}
+
+Meanings:
+- received: an automated acknowledgement that the application arrived.
+- in_review: a human says the application is progressing or under consideration.
+- interview: the reader is invited to talk, or asked to pick a time.
+- offer: a job is being offered.
+- rejected: the reader is not continuing in the process.
+
+Set job_related to false for job-board newsletters, job alerts, and recruiter
+cold outreach about roles the reader never applied to.
+
+If the email does not clearly say any of these, return stage null with a low
+confidence. Never guess: an invented stage is worse than no stage."""
+
+
+class _LLMSignal(BaseModel):
+    stage: str | None = None
+    company: str | None = None
+    title: str | None = None
+    confidence: float = 0.0
+    evidence: str = ""
+    job_related: bool = True
+
+
+UNRESOLVED = Signal(stage=None, company=None, title=None, confidence=0.0,
+                    evidence="", job_related=True)
+
+
+def classify(msg: MailMessage, llm: LLMClient | None) -> Signal:
+    """Always returns a Signal. `stage is None` means we could not tell."""
+    ruled = classify_by_rules(msg)
+    if ruled is not None:
+        return ruled
+    if llm is None:
+        return UNRESOLVED
+
+    user = (f"From: {msg.from_address}\n"
+            f"Subject: {msg.subject}\n\n"
+            f"{msg.body[:4000]}")
+    try:
+        answer = llm.chat_json(MODEL_FAST, CLASSIFY_SYSTEM, user, _LLMSignal)
+    except LLMError as exc:
+        # Quota or outage. The mail stays unclassified and is retried next sync;
+        # the alternative — guessing — is the one outcome we refuse.
+        logger.warning("[inbox] classifier LLM unavailable: %s", exc)
+        return UNRESOLVED
+
+    if not answer.job_related:
+        return Signal(stage=None, company=None, title=None,
+                      confidence=answer.confidence, evidence="", job_related=False)
+
+    valid = answer.stage in ("received", "in_review", "interview", "offer", "rejected")
+    if not valid or answer.confidence < MIN_CONFIDENCE:
+        return UNRESOLVED
+
+    return Signal(stage=answer.stage, company=answer.company, title=answer.title,
+                  confidence=answer.confidence, evidence=answer.evidence,
+                  job_related=True)

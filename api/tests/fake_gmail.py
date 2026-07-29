@@ -60,6 +60,11 @@ class FakeGmail:
       Omit either to keep the old single-page behavior.
     - `list_quota_on_page` / `history_quota_on_page`: return a quota error
       on a specific 0-indexed page instead of the first request.
+    - `list_error_on_page` / `history_error_on_page`: return a plain 500 on a
+      specific 0-indexed page — a transient failure that is *not* a quota
+      error and must not be classified as one.
+    - `profile_status`: make the trailing cursor lookup fail with a non-quota
+      status.
     """
 
     def __init__(self, messages: list[dict], *, history=None, history_status=200,
@@ -69,7 +74,10 @@ class FakeGmail:
                  list_pages: list[list[str]] | None = None,
                  history_pages: list[dict] | None = None,
                  list_quota_on_page: int | None = None,
-                 history_quota_on_page: int | None = None):
+                 history_quota_on_page: int | None = None,
+                 list_error_on_page: int | None = None,
+                 history_error_on_page: int | None = None,
+                 profile_status: int = 200):
         self.by_id = {m["id"]: m for m in messages}
         self.history = history
         self.history_status = history_status
@@ -82,6 +90,9 @@ class FakeGmail:
         self.history_pages = history_pages
         self.list_quota_on_page = list_quota_on_page
         self.history_quota_on_page = history_quota_on_page
+        self.list_error_on_page = list_error_on_page
+        self.history_error_on_page = history_error_on_page
+        self.profile_status = profile_status
         self.requests: list[httpx.Request] = []
 
     def client(self) -> httpx.Client:
@@ -116,12 +127,16 @@ class FakeGmail:
         if self.quota_after is not None and gets > self.quota_after:
             return self._quota_response()
         if path.endswith("/profile"):
+            if self.profile_status != 200:
+                return httpx.Response(self.profile_status, json={"error": {"message": "boom"}})
             return httpx.Response(200, json={"emailAddress": "ada@example.com",
                                              "historyId": self.profile_history_id})
         if path.endswith("/history"):
             page_index = self._page_index(request)
             if self.history_quota_on_page is not None and page_index == self.history_quota_on_page:
                 return self._quota_response()
+            if self.history_error_on_page is not None and page_index == self.history_error_on_page:
+                return httpx.Response(500, json={"error": {"message": "boom"}})
             if self.history_status != 200:
                 return httpx.Response(self.history_status, json={"error": {"message": "gone"}})
             if self.history_pages is not None:
@@ -134,6 +149,8 @@ class FakeGmail:
             page_index = self._page_index(request)
             if self.list_quota_on_page is not None and page_index == self.list_quota_on_page:
                 return self._quota_response()
+            if self.list_error_on_page is not None and page_index == self.list_error_on_page:
+                return httpx.Response(500, json={"error": {"message": "boom"}})
             if self.list_pages is not None:
                 ids = self.list_pages[page_index]
                 body = {"messages": [{"id": i, "threadId": self.by_id.get(i, {}).get("threadId", "t1")}

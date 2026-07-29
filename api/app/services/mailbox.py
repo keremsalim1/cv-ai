@@ -10,7 +10,7 @@ from email.utils import parsedate_to_datetime, parseaddr
 from typing import Protocol
 
 import httpx
-from lxml import html as lxml_html
+from lxml import etree, html as lxml_html
 
 logger = logging.getLogger(__name__)
 
@@ -120,6 +120,16 @@ class GmailSource:
                 logger.warning("[inbox] gmail quota hit paginating %s after %d page(s)",
                                 path, len(pages))
                 return pages, True
+            except httpx.HTTPError:
+                if not pages:
+                    # Nothing gathered yet, so there is no work to protect —
+                    # and the very first call failing is how the caller learns
+                    # about an expired history cursor, a revoked token or a
+                    # missing scope. Never disguise that as "no new mail".
+                    raise
+                logger.warning("[inbox] gmail %s failed after %d page(s); treating as partial",
+                                path, len(pages))
+                return pages, True
             pages.append(page)
             page_token = page.get("nextPageToken")
             if not page_token:
@@ -211,10 +221,13 @@ class GmailSource:
             return FetchResult(messages, cursor=None, partial=False)
         try:
             cursor = self._get("/profile").get("historyId")
-        except _QuotaExceeded:
+        except (_QuotaExceeded, httpx.HTTPError):
             # Messages are already in hand; don't discard them just because
-            # the trailing cursor lookup got throttled.
-            logger.warning("[inbox] gmail quota hit fetching profile after %d messages", len(messages))
+            # the trailing cursor lookup was throttled or failed. Without a
+            # fresh historyId there is no cursor to advance to, so the fetch
+            # is partial and the next sync re-reads from the old one.
+            logger.warning("[inbox] gmail profile lookup failed after %d messages; "
+                            "keeping them, cursor unchanged", len(messages))
             return FetchResult(messages, cursor=None, partial=True)
         return FetchResult(messages, cursor=cursor, partial=False)
 
@@ -283,4 +296,10 @@ def _html_to_text(raw_html: str) -> str:
         # Malformed HTML shouldn't be able to take down the sync either;
         # fall back to the raw text rather than raising.
         return raw_html.strip()
+    # text_content() concatenates the text of every descendant, and that
+    # includes the CSS inside <style> and the code inside <script>. Nearly
+    # every ATS template carries a <style> block, so without this the
+    # classifier would read a stylesheet before it reads the message.
+    # with_tail=False keeps the text that follows the element.
+    etree.strip_elements(tree, "script", "style", with_tail=False)
     return " ".join(tree.text_content().split())

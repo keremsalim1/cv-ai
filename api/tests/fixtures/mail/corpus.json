@@ -1,0 +1,76 @@
+[
+  {"id": "gh-rej-en", "from": "no-reply@greenhouse.io",
+   "subject": "Update on your application to Acme",
+   "body": "Thank you for your interest in Acme. After careful review, we have decided to move forward with other candidates for the Backend Engineer role.",
+   "calendar": false, "expect": "rejected"},
+
+  {"id": "wd-rej-tr", "from": "noreply@myworkday.com",
+   "subject": "Başvurunuz hakkında",
+   "body": "Sayın Ada, Yazılım Mühendisi pozisyonuna yaptığınız başvuru olumsuz sonuçlanmıştır. İlginiz için teşekkür ederiz.",
+   "calendar": false, "expect": "rejected"},
+
+  {"id": "lever-rej-en", "from": "no-reply@lever.co",
+   "subject": "Your application to Globex",
+   "body": "We have decided not to proceed with your application at this time.",
+   "calendar": false, "expect": "rejected"},
+
+  {"id": "gh-ack-en", "from": "no-reply@greenhouse.io",
+   "subject": "We received your application",
+   "body": "Thanks for applying to Acme. We have received your application for Backend Engineer and will be in touch.",
+   "calendar": false, "expect": "received"},
+
+  {"id": "ashby-ack-tr", "from": "no-reply@ashbyhq.com",
+   "subject": "Başvurunuz alındı",
+   "body": "Merhaba, Initech için yaptığınız başvuru alınmıştır. Değerlendirme sonrası size döneceğiz.",
+   "calendar": false, "expect": "received"},
+
+  {"id": "lever-review-en", "from": "sara@globex.com",
+   "subject": "Your application - next stage",
+   "body": "Good news: you have been shortlisted and we are moving you to the next stage of the process for the Data Engineer role.",
+   "calendar": false, "expect": "in_review"},
+
+  {"id": "wd-review-tr", "from": "ik@initech.com.tr",
+   "subject": "Başvurunuz değerlendirmede",
+   "body": "Merhaba Ada, başvurunuz değerlendirmeye alındı. Bir sonraki aşama için sizinle iletişime geçeceğiz.",
+   "calendar": false, "expect": "in_review"},
+
+  {"id": "gh-interview-en", "from": "no-reply@greenhouse.io",
+   "subject": "Interview invitation - Acme",
+   "body": "We would love to schedule a call with you next week. Please book a time using the link below.",
+   "calendar": true, "expect": "interview"},
+
+  {"id": "ashby-interview-tr", "from": "ik@initech.com.tr",
+   "subject": "Mülakat daveti",
+   "body": "Merhaba Ada, sizi teknik mülakata davet etmek istiyoruz. Uygun olduğunuz saati seçebilir misiniz?",
+   "calendar": false, "expect": "interview"},
+
+  {"id": "offer-en", "from": "sara@globex.com",
+   "subject": "Offer - Data Engineer at Globex",
+   "body": "We are pleased to offer you the Data Engineer position at Globex. The details are attached.",
+   "calendar": false, "expect": "offer"},
+
+  {"id": "offer-tr", "from": "ik@initech.com.tr",
+   "subject": "İş teklifi",
+   "body": "Merhaba Ada, Yazılım Mühendisi pozisyonu için size iş teklifimizi sunmaktan mutluluk duyarız.",
+   "calendar": false, "expect": "offer"},
+
+  {"id": "newsletter", "from": "jobs-noreply@linkedin.com",
+   "subject": "30 new jobs for Backend Engineer",
+   "body": "Here are this week's recommended positions matching your profile.",
+   "calendar": false, "expect": "ignore"},
+
+  {"id": "cold-outreach", "from": "recruiter@headhunt.example",
+   "subject": "Exciting position for you",
+   "body": "I came across your profile and wanted to see if you would be open to a new opportunity.",
+   "calendar": false, "expect": "ignore"},
+
+  {"id": "personal", "from": "mom@example.com",
+   "subject": "Yemek",
+   "body": "Akşam gelecek misin?",
+   "calendar": false, "expect": "ignore"},
+
+  {"id": "ambiguous", "from": "ik@initech.com.tr",
+   "subject": "Acme - başvurunuz",
+   "body": "Merhaba Ada, süreçle ilgili size kısa bir güncelleme yapmak istedim.",
+   "calendar": false, "expect": "unsure"}
+]

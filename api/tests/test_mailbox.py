@@ -250,3 +250,72 @@ def test_a_403_without_a_recognized_quota_reason_is_a_real_error():
 
     with pytest.raises(httpx.HTTPError):
         GmailSource(gmail.client(), "at").fetch_new(None)
+
+
+# --- HTML bodies must not leak markup-only text ---------------------------
+
+def test_style_and_script_text_never_reaches_the_body():
+    # Real ATS templates ship a <style> block (and often a tracking script).
+    # lxml's text_content() would otherwise hand the classifier a body that
+    # starts with CSS.
+    html = (
+        "<html><head><style>.btn { color: #ff0000; font-size: 14px; }</style>"
+        "<script>var trackId = 'abc123';</script></head>"
+        "<body><p>Merhaba Ada, başvurunuz alındı.</p></body></html>"
+    )
+    gmail = FakeGmail([message("m1", parts=[part("text/html", data=html)])])
+    body = GmailSource(gmail.client(), "at").fetch_new(None).messages[0].body
+
+    assert body == "Merhaba Ada, başvurunuz alındı."
+    assert "color" not in body
+    assert "trackId" not in body
+
+
+# --- Transient (non-quota) failures must not discard work -----------------
+
+def test_a_transient_error_on_the_profile_call_still_returns_fetched_messages():
+    # Same reasoning as the quota case: the messages are already in hand.
+    gmail = FakeGmail([message("m1")], profile_status=500)
+    result = GmailSource(gmail.client(), "at").fetch_new(None)
+
+    assert [m.message_id for m in result.messages] == ["m1"]
+    assert result.partial is True
+    assert result.cursor is None
+
+
+def test_a_transient_error_on_a_later_listing_page_keeps_the_first_pages_messages():
+    gmail = FakeGmail([message("m1"), message("m2")], list_pages=[["m1"], ["m2"]],
+                       list_error_on_page=1)
+    result = GmailSource(gmail.client(), "at").fetch_new(None)
+
+    assert [m.message_id for m in result.messages] == ["m1"]
+    assert result.partial is True
+    assert result.cursor is None
+
+
+def test_a_transient_error_on_the_first_listing_page_surfaces_as_an_error():
+    # Nothing was gathered, so there is no work to protect — and a real
+    # failure (bad scope, dead token) must not be disguised as "no new mail".
+    gmail = FakeGmail([message("m1")], list_pages=[["m1"]], list_error_on_page=0)
+
+    with pytest.raises(httpx.HTTPError):
+        GmailSource(gmail.client(), "at").fetch_new(None)
+
+
+def test_a_transient_error_on_a_later_history_page_does_not_trigger_a_full_scan():
+    pages = [
+        {"history": [{"messagesAdded": [{"message": {"id": "m1", "threadId": "t1"}}]}],
+         "historyId": "9400"},
+        {"history": [{"messagesAdded": [{"message": {"id": "m2", "threadId": "t1"}}]}],
+         "historyId": "9400"},
+    ]
+    gmail = FakeGmail([message("m1"), message("m2")], history_pages=pages,
+                       history_error_on_page=1)
+    result = GmailSource(gmail.client(), "at").fetch_new("9100")
+
+    assert [m.message_id for m in result.messages] == ["m1"]
+    assert result.partial is True
+    assert result.cursor is None
+    # a mid-pagination failure is not an expired cursor: re-listing the whole
+    # mailbox would be wasted work, and the cursor is still valid.
+    assert not any(r.url.path.endswith("/messages") for r in gmail.requests)

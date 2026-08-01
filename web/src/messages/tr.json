@@ -152,6 +152,7 @@
     "SESSION_NOT_FOUND": "Tarayıcı oturumu kapandı. Asistanlı başvuruyu yeniden başlatın.",
     "FORBIDDEN": "Bu tarayıcı oturumu başka bir hesaba ait.",
     "TOO_MANY_SESSIONS": "Sunucu şu anda kapasitesinin sınırında. Birkaç dakika sonra tekrar deneyin.",
+    "GMAIL_DISCONNECTED": "Gmail bağlantısı geçerli değil. E-posta hesabınızı yeniden bağlayın.",
     "UNKNOWN": "Beklenmeyen bir hata oluştu. Lütfen tekrar deneyin."
   },
   "common": {

@@ -33,13 +33,17 @@ class InboxDB(FakeDB):
     applications in production.
     """
 
-    def __init__(self, connections=None, applications=None, events=None):
+    def __init__(self, connections=None, applications=None, events=None,
+                 refuse_events_for=()):
         super().__init__()
         self.tables = {
             "email_connections": list(connections or []),
             "applications": list(applications or []),
             "application_events": list(events or []),
         }
+        # Message ids whose event row the database refuses, standing in for any
+        # row Postgres will not hold — a NUL byte in the extracted body, say.
+        self.refuse_events_for = frozenset(refuse_events_for)
 
     def _owned(self, table, params) -> list[dict]:
         user_id = self._user_id(params)
@@ -49,13 +53,20 @@ class InboxDB(FakeDB):
         return list(self._owned(table, params))
 
     def insert(self, table, row, *, on_conflict=None):
-        # Models `unique (user_id, message_id)` on application_events.
-        if on_conflict and any(
+        if table == "application_events" and row["message_id"] in self.refuse_events_for:
+            raise RuntimeError("supabase POST application_events failed: invalid byte")
+
+        # Models `unique (user_id, message_id)` on application_events: swallowed
+        # when the caller asked for it, a hard error when it did not.
+        if row.get("message_id") is not None and any(
             r.get("user_id") == row.get("user_id")
             and r.get("message_id") == row.get("message_id")
             for r in self.tables[table]
         ):
+            if not on_conflict:
+                raise RuntimeError("duplicate key value violates unique constraint")
             return None
+
         self.inserted.append((table, row))
         stored = dict(row, id=row.get("id", f"{table}-{len(self.tables[table])}"))
         self.tables[table].append(stored)
@@ -64,10 +75,18 @@ class InboxDB(FakeDB):
     def update(self, table, params, patch):
         self.updated.append((table, params, patch))
         target = params.get("id", "").removeprefix("eq.")
-        matched = [r for r in self._owned(table, params)
-                   if not target or r.get("id") == target]
-        for row in matched:
-            row.update(patch)
+        rows = self.tables[table]
+        matched = []
+        for index, row in enumerate(rows):
+            if row.get("user_id") != self._user_id(params):
+                continue
+            if target and row.get("id") != target:
+                continue
+            # PostgREST hands back a fresh row; it cannot reach into the dict the
+            # caller is still holding. A fake that mutated in place would hide
+            # every bookkeeping bug in the sync loop.
+            rows[index] = dict(row, **patch)
+            matched.append(rows[index])
         return matched
 
     def delete(self, table, params):
@@ -152,6 +171,99 @@ def test_an_unmatched_mail_creates_an_external_application():
     assert created["status"] == "external"
     assert created["stage"] == "rejected"
     assert created["user_id"] == "u1"
+    event = [row for table, row in db.inserted if table == "application_events"][0]
+    assert event["user_id"] == "u1"      # NOT NULL, and the RLS key for the row
+
+
+def test_a_mail_we_cannot_read_still_leaves_a_trail_on_an_application_we_know():
+    # The spec's whole promise is that every badge can be justified. A mail from
+    # a company we are tracking that we could not read is exactly the mail the
+    # user will ask about, so it is recorded with no stage rather than dropped.
+    db = connected_db(applications=[
+        {"id": "a1", "user_id": "u1", "url": "https://acme.com/j",
+         "company": "Acme", "stage": "received"},
+    ])
+    source = FakeSource(FetchResult(
+        [mail(sender="hr@acme.com", subject="Bilgilendirme",
+              body="Merhaba, süreçle ilgili kısa bir güncelleme.")],
+        cursor="9200", partial=False))
+
+    report = sync_user_inbox(db, http_returning((200, {"access_token": "at"})),
+                             None, "u1", source_factory=lambda *_: source)
+
+    events = [row for table, row in db.inserted if table == "application_events"]
+    assert len(events) == 1
+    assert events[0]["detected_stage"] is None
+    assert events[0]["application_id"] == "a1"
+    assert report.updated == []
+    assert application_updates(db) == []
+
+
+def test_one_unwritable_message_does_not_kill_the_rest_of_the_run():
+    # The cursor has not advanced yet, so a message that always fails would
+    # otherwise kill every future sync at the same point — the defect already
+    # fixed once in the fetch layer, reached here through the write path.
+    db = connected_db(
+        applications=[
+            {"id": "a1", "user_id": "u1", "url": "https://acme.com/j",
+             "company": "Acme", "stage": "received"},
+            {"id": "a2", "user_id": "u1", "url": "https://globex.com/j",
+             "company": "Globex", "stage": "received"},
+        ],
+        refuse_events_for=["m1"],
+    )
+    source = FakeSource(FetchResult([
+        mail("m1", sender="hr@acme.com"),
+        mail("m2", sender="hr@globex.com", thread="t2", subject="Mülakat daveti",
+             body="Sizi teknik mülakata davet etmek istiyoruz."),
+    ], cursor="9200", partial=False))
+
+    report = sync_user_inbox(db, http_returning((200, {"access_token": "at"})),
+                             None, "u1", source_factory=lambda *_: source)
+
+    assert report.scanned == 2
+    events = [row for table, row in db.inserted if table == "application_events"]
+    assert [e["message_id"] for e in events] == ["m2"]
+    assert [u["to_stage"] for u in report.updated] == ["rejected", "interview"]
+    patch = [p for table, _, p in db.updated if table == "email_connections"][0]
+    assert patch["last_history_id"] == "9200"
+
+
+def test_a_second_mail_in_the_same_run_cannot_rewind_the_stage_the_first_one_set():
+    db = connected_db(applications=[
+        {"id": "a1", "user_id": "u1", "url": "https://acme.com/j",
+         "company": "Acme", "stage": "received"},
+    ])
+    source = FakeSource(FetchResult([
+        mail("m1", sender="hr@acme.com", subject="Mülakat daveti",
+             body="Sizi teknik mülakata davet etmek istiyoruz."),
+        mail("m2", sender="hr@acme.com", thread="t2", subject="Başvurunuz",
+             body="Başvurunuz değerlendirmeye alındı."),
+    ], cursor="9200", partial=False))
+
+    report = sync_user_inbox(db, http_returning((200, {"access_token": "at"})),
+                             None, "u1", source_factory=lambda *_: source)
+
+    assert [u["to_stage"] for u in report.updated] == ["interview"]
+    assert len(application_updates(db)) == 1
+
+
+def test_two_mails_in_one_thread_create_a_single_application():
+    # Both come from an ATS, which names the vendor and not the employer, so the
+    # thread is the only thing tying the second mail to the first one's row.
+    db = connected_db()
+    source = FakeSource(FetchResult([
+        mail("m1", subject="Update", body="Thanks for applying to the role."),
+        mail("m2", subject="Update",
+             body="We would love to schedule a call with you."),
+    ], cursor="9200", partial=False))
+
+    report = sync_user_inbox(db, http_returning((200, {"access_token": "at"})),
+                             None, "u1", source_factory=lambda *_: source)
+
+    assert report.created == 1
+    assert len([row for table, row in db.inserted if table == "applications"]) == 1
+    assert [u["to_stage"] for u in report.updated] == ["interview"]
 
 
 def test_a_mail_the_classifier_cannot_read_creates_nothing():

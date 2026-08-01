@@ -15,10 +15,12 @@ from datetime import datetime, timezone
 from app.services.inbox_classify import classify
 from app.services.inbox_connect import access_token_for
 from app.services.inbox_match import match_application
-from app.services.inbox_stage import next_stage
+from app.services.inbox_stage import STAGE_ORDER, TERMINAL, next_stage
 from app.services.mailbox import GmailSource
 
 logger = logging.getLogger(__name__)
+
+KNOWN_STAGES = frozenset(STAGE_ORDER) | {TERMINAL}
 
 
 @dataclass
@@ -63,64 +65,85 @@ def sync_user_inbox(db, http, llm, user_id: str, source_factory=None) -> SyncRep
         if msg.message_id in seen:
             continue
 
-        signal = classify(msg, llm)
-        if not signal.job_related:
-            continue
-        report.classified += 1
-        if signal.stage is None:
-            # Nothing to attach an event to, and no stage to record. Leave it
-            # for a later sync rather than inventing an application.
-            continue
+        try:
+            signal = classify(msg, llm)
+            if not signal.job_related:
+                continue
+            report.classified += 1
 
-        application = match_application(msg, signal, applications, threads).application
-        if application is None:
-            application = db.insert("applications", {
-                "user_id": user_id,
-                "url": "",
-                "company": signal.company,
-                "title": signal.title,
-                "status": "external",
-                "source": "email",
-                "stage": signal.stage,
-                "stage_updated_at": _now(),
-                "qa": {},
-                "changes": [],
-            })
-            applications.append(application)
-            report.created += 1
-        else:
-            # Read where it came from before anything writes over it: a db layer
-            # that hands back live rows would otherwise turn the report into
-            # "rejected -> rejected" and lose the transition the user wants told.
-            from_stage = application.get("stage")
-            moved = next_stage(from_stage, signal.stage)
-            if moved:
-                db.update("applications",
-                          {"id": f"eq.{application['id']}", "user_id": owner},
-                          {"stage": moved, "stage_updated_at": _now()})
-                report.updated.append({
-                    "application_id": application["id"],
-                    "company": application.get("company"),
-                    "from_stage": from_stage,
-                    "to_stage": moved,
+            matched = match_application(msg, signal, applications, threads)
+            application = matched.application
+            if application is None:
+                if signal.stage is None:
+                    # No row to hang an event on — application_id is NOT NULL —
+                    # and no stage worth inventing an application for. This is
+                    # the one mail that legitimately leaves no trace.
+                    continue
+                application = db.insert("applications", {
+                    "user_id": user_id,
+                    "url": "",
+                    "company": signal.company,
+                    "title": signal.title,
+                    "status": "external",
+                    "source": "email",
+                    "stage": signal.stage,
+                    "stage_updated_at": _now(),
+                    "qa": {},
+                    "changes": [],
                 })
-                application["stage"] = moved
+                applications.append(application)
+                report.created += 1
+            else:
+                logger.debug("[inbox] %s matched application %s by %s",
+                             msg.message_id, application["id"], matched.reason)
+                # Read where it came from before anything writes over it: a db
+                # layer that hands back live rows would otherwise turn the report
+                # into "rejected -> rejected" and lose the transition.
+                from_stage = application.get("stage")
+                if from_stage is not None and from_stage not in KNOWN_STAGES:
+                    # next_stage refuses to reason about it, so nothing but a
+                    # rejection will ever move this row again. Say so out loud.
+                    logger.warning(
+                        "[inbox] application %s holds an unrecognised stage %r; "
+                        "only a rejection can move it", application["id"], from_stage)
+                moved = next_stage(from_stage, signal.stage)
+                if moved:
+                    db.update("applications",
+                              {"id": f"eq.{application['id']}", "user_id": owner},
+                              {"stage": moved, "stage_updated_at": _now()})
+                    report.updated.append({
+                        "application_id": application["id"],
+                        "company": application.get("company"),
+                        "from_stage": from_stage,
+                        "to_stage": moved,
+                    })
+                    # The db handed back a new row; this list is our own copy,
+                    # and a later mail in this same run reads it.
+                    application["stage"] = moved
 
-        db.insert("application_events", {
-            "user_id": user_id,
-            "application_id": application["id"],
-            "source": "email",
-            "message_id": msg.message_id,
-            "thread_id": msg.thread_id,
-            "from_address": msg.from_address,
-            "subject": msg.subject,
-            "received_at": msg.received_at,
-            "detected_stage": signal.stage,
-            "confidence": signal.confidence,
-            "evidence": signal.evidence,
-        }, on_conflict="user_id,message_id")
-        seen.add(msg.message_id)
-        threads[msg.thread_id] = application["id"]
+            # Recorded whether or not the stage moved, and whether or not we
+            # could read one: an unresolved mail from a company the user is
+            # tracking is exactly the mail they will ask about.
+            db.insert("application_events", {
+                "user_id": user_id,
+                "application_id": application["id"],
+                "source": "email",
+                "message_id": msg.message_id,
+                "thread_id": msg.thread_id,
+                "from_address": msg.from_address,
+                "subject": msg.subject,
+                "received_at": msg.received_at,
+                "detected_stage": signal.stage,
+                "confidence": signal.confidence,
+                "evidence": signal.evidence,
+            }, on_conflict="user_id,message_id")
+            seen.add(msg.message_id)
+            threads[msg.thread_id] = application["id"]
+        except Exception:
+            # The cursor has not advanced yet, so letting this escape would make
+            # every future sync die on the same message and the user would never
+            # see another update. Skip it; the next sync retries it.
+            logger.exception("[inbox] skipping message %s", msg.message_id)
 
     patch = {"last_synced_at": _now()}
     if not fetched.partial and fetched.cursor:

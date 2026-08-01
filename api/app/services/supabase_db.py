@@ -5,6 +5,8 @@ Everything else in this product reaches Supabase from the browser under RLS
 no browser may read, so no RLS policy can exist for it. That forces the service
 role, which bypasses RLS — so every caller here must filter on user_id itself.
 """
+from collections.abc import Iterator
+
 import httpx
 
 from app.config import get_settings
@@ -55,7 +57,10 @@ class SupabaseDB:
         self._send("DELETE", table, params=params)
 
 
-def get_db() -> SupabaseDB:
+def get_db() -> Iterator[SupabaseDB]:
+    # FastAPI closes a yielding dependency when the request ends; without that
+    # every request would leak a connection pool.
     settings = get_settings()
-    return SupabaseDB(httpx.Client(timeout=20.0),
-                      settings.supabase_url, settings.supabase_service_key)
+    with httpx.Client(timeout=20.0) as client:
+        yield SupabaseDB(client, settings.supabase_url,
+                         settings.supabase_service_key)

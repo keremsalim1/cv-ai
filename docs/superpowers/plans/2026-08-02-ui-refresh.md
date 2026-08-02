@@ -269,17 +269,25 @@ In the `.dark { … }` block, after the `--sidebar-ring` line, add:
 system rots — the exact fault this refresh exists to fix, recreated in the act
 of fixing it.
 
-So: **replace** `.font-display` with the roles below. It has 13 call sites; each
-one is a heading that becomes `.type-title` (page headings) or `.type-display`
-(the landing hero), and every one of those files is already being touched by
-Tasks 4-8. Find them with:
+**CORRECTED DURING IMPLEMENTATION.** The review prescribed deleting
+`.font-display`. Reading its 13 call sites showed that was wrong: it is not a
+heading role, it is the serif *family* on its own, used at seven different
+sizes — page headings at `text-3xl`, the landing hero at a bespoke clamp, two
+score figures at `text-7xl`, and the brand wordmark at `text-[17px]`. Six
+fixed-size roles do not cover the score figure or the wordmark, and deleting the
+class would leave them unstyled.
 
-```bash
-grep -rn "font-display" web/src --include=*.tsx
-```
+The right shape is a family primitive **plus** semantic roles, the same way
+Tailwind carries `font-mono` alongside `text-sm`. So:
 
-Delete the `.font-display` rule, and in the existing `@layer components { … }`
-block add:
+- `.font-display` **stays**, narrowed by comment to the escape hatch it is.
+- The roles below are self-contained (they set the family themselves).
+- Call sites migrate in Tasks 5, 7 and 8: the five page `h1`s become
+  `.type-title`, the landing hero becomes `.type-display`, the landing `h3`
+  becomes `.type-heading`. The score figures, the wordmark and the two bespoke
+  landing clamps keep `.font-display` — a role would fight them.
+
+In the existing `@layer components { … }` block, after `.font-display`, add:
 
 ```css
   /* Six roles. A component adopts one; it does not assemble its own from
@@ -331,12 +339,19 @@ block add:
 Run from `web/`:
 
 ```bash
-grep -rn "font-display" web/src --include=*.tsx | wc -l   # must be 0
 npm run build
 npm test
 ```
 
-Expected: no `font-display` references remain, the build succeeds, and all 101 tests pass. The headings now render at 36px instead of 30px; if a test asserted on a class name rather than on text, that is a test worth fixing — class names are not behavior.
+Expected: the build succeeds and every test passes. No surface uses the roles yet, so nothing looks different.
+
+Then prove the depth tokens actually generate utilities — `@theme inline` substitutes values into utilities rather than emitting vars, so their absence from the stylesheet proves nothing on its own. Write a throwaway `src/shadow-probe.tsx` containing `className="shadow-e1 hover:shadow-e2 md:shadow-e3"`, build, and grep the emitted CSS:
+
+```bash
+grep -o 'shadow-e[123]' $(find .next/static/chunks -name "*.css" -newermt "-3 minutes" | head -1) | sort | uniq -c
+```
+
+Expected: one of each. Then delete the probe. Skipping this check is how a broken token silently survives five more tasks.
 
 - [ ] **Step 5: Commit**
 
@@ -1606,7 +1621,7 @@ Step 0 scope: accepted in full, split across two branches (T1-T4 here, T5-T8 on
 Findings and disposition:
 1. Route transition was enter-only — kept enter-only by decision D3, spec wording corrected.
 2. `MotionProvider` was mounted in `(app)` then moved — now mounted at the root in Task 1.
-3. `.font-display` duplicated the new roles — retired in Task 2, 13 call sites migrate.
+3. `.font-display` duplicated the new roles — **finding partly withdrawn during implementation.** The duplication was real but the prescribed fix was wrong: the class is a family primitive used at seven sizes, and two of them (score figures, brand wordmark) no role covers. Kept as a documented escape hatch; 8 of 13 call sites migrate to roles in Tasks 5/7/8.
 4. Stagger was unbounded (7s for 200 rows) — capped at `STAGGER_MAX_ITEMS`, asserted by test.
 5. `Disclosure` has one consumer — accepted, recorded in NOT in scope.
 6. `AppSidebar` test may assert nav item count — flagged in Task 4 Step 8.

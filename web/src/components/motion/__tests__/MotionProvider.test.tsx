@@ -1,7 +1,9 @@
 import { render, screen } from '@testing-library/react'
 import { expect, it } from 'vitest'
 import { MotionProvider } from '@/components/motion/MotionProvider'
-import { flow, settle, snap, STAGGER_MAX_ITEMS, STAGGER_STEP } from '@/lib/motion'
+import {
+  flow, settle, snap, staggerDelay, STAGGER_MAX_ITEMS, STAGGER_STEP,
+} from '@/lib/motion'
 
 it('renders its children', () => {
   render(<MotionProvider><p>hello</p></MotionProvider>)
@@ -27,6 +29,12 @@ it('staggers inside the perceptible band', () => {
 
 it('caps the entrance so a long list never becomes a queue', () => {
   // A user with 200 applications must not wait 7 seconds for the last row.
-  const worstCase = STAGGER_STEP * STAGGER_MAX_ITEMS
-  expect(worstCase).toBeLessThanOrEqual(0.5)
+  expect(staggerDelay(200)).toBeLessThanOrEqual(0.5)
+})
+
+it('staggers the head of the list and lands the tail together', () => {
+  expect(staggerDelay(0)).toBe(0)
+  expect(staggerDelay(3)).toBeCloseTo(3 * STAGGER_STEP)
+  // Past the cap the delay stops growing — that is the whole point.
+  expect(staggerDelay(STAGGER_MAX_ITEMS)).toBe(staggerDelay(1000))
 })

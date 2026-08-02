@@ -18,3 +18,12 @@ export const STAGGER_STEP = 0.035
  * items and everything past it arrives together.
  */
 export const STAGGER_MAX_ITEMS = 12
+
+/**
+ * Entrance delay for the item at `index`, in seconds. Flat past the cap, so the
+ * 13th row and the 200th row arrive together instead of the list turning into a
+ * queue the user watches drain.
+ */
+export function staggerDelay(index: number): number {
+  return Math.min(index, STAGGER_MAX_ITEMS) * STAGGER_STEP
+}

@@ -13,6 +13,14 @@ Apply `../supabase/migrations/0001_init.sql` to your Supabase project
 (SQL Editor or `supabase db push`). Enable the Google provider in
 Supabase Auth and add `<origin>/auth/callback` to the redirect allowlist.
 
+For `/applications` (Gmail-based status tracking) also set:
+
+    NEXT_PUBLIC_GOOGLE_CLIENT_ID=...   # same OAuth client as the API's GOOGLE_CLIENT_ID
+
+and add `<origin>/auth/gmail/callback` to that client's redirect URIs in the
+Google Cloud console. This is our own OAuth client, not Supabase's — see
+`../api/README.md` for why.
+
 ## Run (with the API)
 
     # terminal 1:  ..\api>  .venv\Scripts\uvicorn app.main:app --reload --port 8000
@@ -25,7 +33,7 @@ Supabase Auth and add `<origin>/auth/callback` to the redirect allowlist.
     npm run e2e         # needs E2E_BASE_URL (and `npm run dev` running)
 
 Routes: `/`, `/login`, `/register`, `/dashboard`, `/cv/[id]` (view-only), `/score`,
-`/ats` (`/cv/[id]/score` now redirects to `/score?cv=<id>`).
+`/ats`, `/applications` (`/cv/[id]/score` now redirects to `/score?cv=<id>`).
 
 ## Windows note
 

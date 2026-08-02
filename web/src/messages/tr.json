@@ -11,7 +11,8 @@
     "dashboard": "Panel",
     "score": "Skorla",
     "ats": "ATS'ye Çevir",
-    "optimize": "Optimize & Başvur"
+    "optimize": "Optimize & Başvur",
+    "applications": "Başvurularım"
   },
   "landing": {
     "title": "CV'nizi yapay zeka ile işe hazırlayın",
@@ -88,6 +89,33 @@
     "convert": "ATS'ye Çevir",
     "converting": "Dönüştürülüyor…",
     "done": "Dönüştürüldü! PDF indirildi ve ATS kopyası panelinize kaydedildi."
+  },
+  "applications": {
+    "title": "Başvurularım",
+    "intro": "Gmail'ini bağla, şirketlerden gelen cevapları burada topluca gör.",
+    "connect": "Gmail'i bağla",
+    "connectExplain": "Sadece başvuru maillerini okuruz — hiçbir mail göndermez, silmez ve kişisel yazışmalarını indirmeyiz. İstediğin an bağlantıyı kesebilirsin.",
+    "connected": "Gmail'e bağlı",
+    "disconnect": "Bağlantıyı kes",
+    "refresh": "Yenile",
+    "refreshing": "Gelen kutusu taranıyor…",
+    "syncedAt": "{time} güncellendi",
+    "neverSynced": "Henüz taranmadı",
+    "partial": "Kısmen güncellendi — Gmail sınırına takıldık, birazdan tekrar dene.",
+    "denied": "Gmail bağlantısına izin verilmedi.",
+    "revoked": "Gmail bağlantın sona ermiş. Yeniden bağla.",
+    "empty": "Henüz başvuru yok.",
+    "why": "Neden?",
+    "noEvents": "Bu başvuru için henüz bir e-posta görmedik.",
+    "eventFrom": "Gönderen",
+    "unknownCompany": "Şirket belirtilmemiş",
+    "stage": {
+      "received": "Alındı",
+      "in_review": "Değerlendirmede",
+      "interview": "Mülakat",
+      "offer": "Teklif",
+      "rejected": "Ret"
+    }
   },
   "optimize": {
     "title": "Optimize & Başvur",

@@ -2,7 +2,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import { LayoutDashboard, Target, FileOutput, Send } from 'lucide-react'
+import { LayoutDashboard, Target, FileOutput, Send, Inbox } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const ITEMS = [
@@ -10,6 +10,7 @@ const ITEMS = [
   { href: '/score', key: 'score', icon: Target, also: [] },
   { href: '/ats', key: 'ats', icon: FileOutput, also: [] },
   { href: '/optimize', key: 'optimize', icon: Send, also: [] },
+  { href: '/applications', key: 'applications', icon: Inbox, also: [] },
 ] as const
 
 export function AppSidebar() {

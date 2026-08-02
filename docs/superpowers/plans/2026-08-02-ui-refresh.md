@@ -84,7 +84,7 @@ Create `web/src/components/motion/__tests__/MotionProvider.test.tsx`:
 import { render, screen } from '@testing-library/react'
 import { expect, it } from 'vitest'
 import { MotionProvider } from '@/components/motion/MotionProvider'
-import { flow, settle, snap, STAGGER_STEP } from '@/lib/motion'
+import { flow, settle, snap, STAGGER_MAX_ITEMS, STAGGER_STEP } from '@/lib/motion'
 
 it('renders its children', () => {
   render(<MotionProvider><p>hello</p></MotionProvider>)
@@ -106,6 +106,12 @@ it('staggers inside the perceptible band', () => {
   // Below 30ms a stagger reads as a single event; above 50ms it reads as a queue.
   expect(STAGGER_STEP).toBeGreaterThanOrEqual(0.03)
   expect(STAGGER_STEP).toBeLessThanOrEqual(0.05)
+})
+
+it('caps the entrance so a long list never becomes a queue', () => {
+  // A user with 200 applications must not wait 7 seconds for the last row.
+  const worstCase = STAGGER_STEP * STAGGER_MAX_ITEMS
+  expect(worstCase).toBeLessThanOrEqual(0.5)
 })
 ```
 
@@ -157,6 +163,13 @@ export const settle: Transition = { type: 'spring', visualDuration: 0.42, bounce
 
 /** Seconds between staggered children. */
 export const STAGGER_STEP = 0.035
+
+/**
+ * A stagger is a rhythm, not a queue. Unbounded, a user with 200 applications
+ * waits 7 seconds for the last row — so the delay stops growing after this many
+ * items and everything past it arrives together.
+ */
+export const STAGGER_MAX_ITEMS = 12
 ```
 
 - [ ] **Step 5: Write the provider**
@@ -182,9 +195,13 @@ export function MotionProvider({ children }: { children: React.ReactNode }) {
 }
 ```
 
-- [ ] **Step 6: Mount it**
+- [ ] **Step 6: Mount it at the root**
 
-In `web/src/app/(app)/layout.tsx`, wrap the existing returned tree in `<MotionProvider>…</MotionProvider>` and add the import. Change nothing else in that file.
+In `web/src/app/layout.tsx` — the **root** layout, not `(app)/layout.tsx` — wrap the body's children in `<MotionProvider>…</MotionProvider>` and add the import. Change nothing else in that file.
+
+The root, because the landing, login and register pages live outside `(app)`. Mounting inside `(app)` first and moving it later would leave those three pages with no reduced-motion policy for the length of the sweep, and the policy is the one thing that must never be partially applied.
+
+If `app/layout.tsx` is a server component, do not add `'use client'` to it — `MotionProvider` already carries the directive, and a client provider can wrap server children.
 
 - [ ] **Step 7: Run the tests**
 
@@ -195,7 +212,7 @@ Expected: PASS — 3 new tests, and all 101 pre-existing tests still green.
 
 ```bash
 git add web/package.json web/package-lock.json web/src/lib/motion.ts \
-        web/src/components/motion web/src/app/\(app\)/layout.tsx
+        web/src/components/motion web/src/app/layout.tsx
 git commit -m "feat(web): one spring family and a site-wide reduced-motion policy"
 ```
 
@@ -244,9 +261,25 @@ In the `.dark { … }` block, after the `--sidebar-ring` line, add:
   --elevation-3: 0 24px 48px -20px rgb(0 0 0 / 0.7);
 ```
 
-- [ ] **Step 3: Add the type roles**
+- [ ] **Step 3: Add the type roles, and retire the one they duplicate**
 
-In the existing `@layer components { … }` block, immediately after the `.font-display` rule, add:
+`globals.css:196` already defines `.font-display`, which sets the same
+`font-family: var(--font-heading)` and `font-feature-settings: "ss01"` that
+`.type-display` and `.type-title` are about to set. Leaving both is how a type
+system rots — the exact fault this refresh exists to fix, recreated in the act
+of fixing it.
+
+So: **replace** `.font-display` with the roles below. It has 13 call sites; each
+one is a heading that becomes `.type-title` (page headings) or `.type-display`
+(the landing hero), and every one of those files is already being touched by
+Tasks 4-8. Find them with:
+
+```bash
+grep -rn "font-display" web/src --include=*.tsx
+```
+
+Delete the `.font-display` rule, and in the existing `@layer components { … }`
+block add:
 
 ```css
   /* Six roles. A component adopts one; it does not assemble its own from
@@ -298,11 +331,12 @@ In the existing `@layer components { … }` block, immediately after the `.font-
 Run from `web/`:
 
 ```bash
+grep -rn "font-display" web/src --include=*.tsx | wc -l   # must be 0
 npm run build
 npm test
 ```
 
-Expected: the build succeeds and all 101 tests pass. No surface uses the new roles yet, so nothing should look different.
+Expected: no `font-display` references remain, the build succeeds, and all 101 tests pass. The headings now render at 36px instead of 30px; if a test asserted on a class name rather than on text, that is a test worth fixing — class names are not behavior.
 
 - [ ] **Step 5: Commit**
 
@@ -381,17 +415,24 @@ Create `web/src/components/motion/Stagger.tsx`:
 
 ```tsx
 'use client'
-import { motion, stagger, type Variants } from 'motion/react'
-import { flow, STAGGER_STEP } from '@/lib/motion'
+import { motion, type Variants } from 'motion/react'
+import { flow, STAGGER_MAX_ITEMS, STAGGER_STEP } from '@/lib/motion'
 
-const container: Variants = {
-  hidden: {},
-  show: { transition: { delayChildren: stagger(STAGGER_STEP) } },
-}
+const container: Variants = { hidden: {}, show: {} }
 
+/**
+ * The delay is computed per index rather than handed to `stagger()`, because
+ * `stagger()` keeps multiplying forever: a 200-row list would take seven
+ * seconds to finish arriving. Past the cap every remaining row shares the last
+ * delay, so a long list still has a rhythm but never a queue.
+ */
 const item: Variants = {
   hidden: { opacity: 0, y: 8 },
-  show: { opacity: 1, y: 0, transition: flow },
+  show: (index: number) => ({
+    opacity: 1,
+    y: 0,
+    transition: { ...flow, delay: Math.min(index, STAGGER_MAX_ITEMS) * STAGGER_STEP },
+  }),
 }
 
 export function Stagger({ children, className, as = 'div' }: {
@@ -407,13 +448,19 @@ export function Stagger({ children, className, as = 'div' }: {
   )
 }
 
-export function StaggerItem({ children, className, as = 'div' }: {
+export function StaggerItem({ children, className, index = 0, as = 'div' }: {
   children: React.ReactNode
   className?: string
+  /** Position in the list. Drives the capped delay; pass the map index. */
+  index?: number
   as?: 'div' | 'li'
 }) {
   const Tag = as === 'li' ? motion.li : motion.div
-  return <Tag variants={item} className={className}>{children}</Tag>
+  return (
+    <Tag variants={item} custom={index} className={className}>
+      {children}
+    </Tag>
+  )
 }
 ```
 
@@ -1113,8 +1160,8 @@ export default function ApplicationsPage() {
         <p className="type-body text-muted-foreground">{t('empty')}</p>
       ) : (
         <Stagger as="ul" className="flex flex-col gap-3">
-          {rows.map((row) => (
-            <StaggerItem as="li" key={row.id}>
+          {rows.map((row, i) => (
+            <StaggerItem as="li" key={row.id} index={i}>
               <ApplicationCard row={row} loadEvents={loadEvents} />
             </StaggerItem>
           ))}
@@ -1140,6 +1187,11 @@ In `web/src/lib/protected.ts`, extend the prefix list:
 ```ts
 const PROTECTED_PREFIXES = ['/dashboard', '/cv', '/score', '/ats', '/applications']
 ```
+
+Then run `npm test -- src/components/__tests__/AppSidebar.test.tsx`. If it asserts
+on the number of nav items, that assertion now needs the new count — this is the
+one place in the whole plan where editing an existing test is correct, because the
+nav genuinely gained an item. If it fails for any other reason, stop and report.
 
 - [ ] **Step 9: Run the page tests**
 
@@ -1216,8 +1268,8 @@ In the same file, replace the rendered list container:
 
 ```tsx
         <Stagger className="flex flex-col gap-3">
-          {cvs.map((cv) => (
-            <StaggerItem key={cv.id}>
+          {cvs.map((cv, i) => (
+            <StaggerItem key={cv.id} index={i}>
               <CvCard cv={cv} onDelete={() => onDelete(cv)} />
             </StaggerItem>
           ))}
@@ -1471,3 +1523,94 @@ The suite proves the logic; only a browser proves the feel.
 5. Toggle dark mode on every page and confirm the depth scale still reads as depth — shadows on a dark ground must be darker, not fainter.
 6. Enable OS reduced motion and repeat steps 2–4: everything still works, nothing translates.
 7. At 375px width, confirm no horizontal scroll and no clipped headline.
+
+---
+
+## What already exists
+
+| Already in the codebase | Does the plan reuse it? |
+|---|---|
+| `.font-display` (globals.css:196) | **No — it duplicated it.** Fixed in Task 2: the role replaces it, 13 call sites migrate. |
+| Tailwind spacing 2/3/4/6/10/16 | Yes. The tier list maps onto them exactly, so no new spacing tokens. |
+| `tw-animate-css` (`animate-pulse`, `animate-spin`) | Yes, kept for the skeleton and the sync spinner. Motion does not replace them. |
+| `MotionConfig reducedMotion="user"` | Yes — the framework's built-in, not a hand-rolled `useReducedMotion` in every component. |
+| React `<ViewTransition>` (Next 16, experimental) | **Deliberately not used.** It animates via browser CSS, which would put a second motion vocabulary next to the spring family. |
+| `components/ui/` (shadcn card, button) | Untouched. The depth scale applies to their consumers, not to the primitives. |
+
+## NOT in scope
+
+- **Full route exit transitions.** The App Router "frozen router" pattern fights
+  scroll restoration and data freshness for a marginal gain (D3).
+- **Component anatomy, IA, navigation, copy, palette, fonts.** If one of these
+  turns out to be the real problem, that is a finding to report, not a change to
+  make here.
+- **`LazyMotion` bundle optimization.** Premature until the bundle cost is
+  measured against a real build.
+- **`Disclosure` inlining.** It has one consumer today, which by strict YAGNI is
+  premature abstraction. Kept because it carries its own contract and tests, and
+  `ApplicationCard` is already long. Revisit if it still has one consumer in three
+  months.
+- **The landing page's structure.** Task 8 gives it type roles only.
+
+## Failure modes
+
+| New codepath | Realistic production failure | Test? | Error handling? | Silent? |
+|---|---|---|---|---|
+| `MotionProvider` | Policy not applied → motion ships to users who asked for none | Yes — `reducedMotion.test.tsx` asserts `"user"` | N/A | Would be silent — hence the test |
+| `Stagger` delay | Long list becomes a 7s queue | Yes — cap asserted in `MotionProvider.test.tsx` | Cap in `motion.ts` | Would be visible but maddening |
+| `Disclosure` height | Panel opens to 0 height if content measures late | Partial — open/closed content presence tested, not measurement | None | Visible |
+| OAuth `state` check | Attacker's code exchanged onto this account | Yes — two tests in Task 4 | `setNotice(t('denied'))` | No, user sees the notice |
+| Route entrance | Fires on back/forward, fighting scroll restore | No | None | Visible jank only |
+
+No critical gaps: every failure mode above has either a test or visible symptoms.
+The `Disclosure` measurement case is the weakest and is accepted.
+
+## Worktree parallelization
+
+| Step | Modules touched | Depends on |
+|------|----------------|------------|
+| T1 motion foundation | `lib/`, `components/motion/`, `app/layout.tsx` | — |
+| T2 type roles + depth | `app/globals.css` | — |
+| T3 primitives | `components/motion/` | T1 |
+| T4 applications page | `app/(app)/applications/`, `components/applications/`, `messages/` | T1, T2, T3 |
+| T5 dashboard | `app/(app)/dashboard/`, `components/CvCard` | T2, T3 |
+| T6 app shell | `app/(app)/layout.tsx`, `components/AppSidebar`, `NavBar` | T1, T2 |
+| T7 remaining app pages | `app/(app)/score|ats|optimize|cv/`, `components/Progress*` | T2, T3 |
+| T8 public pages | `app/page.tsx`, `app/login/`, `app/register/` | T1, T2 |
+
+```
+Lane A: T1 -> T3 -> T4          (sequential, shared components/motion/)
+Lane B: T2                       (independent, CSS only)
+Lane C: T5, T6, T7, T8           (parallel with each other, all wait on A+B)
+
+Launch A and B together. Merge. Then C fans out into four lanes.
+```
+
+Conflict flag: **T6 and T1 both touch a layout file** (`(app)/layout.tsx` vs
+`app/layout.tsx`) — different files after the D3/finding-2 fix, so no conflict.
+T4 and T5 both touch `components/`, but disjoint subdirectories.
+
+## GSTACK REVIEW REPORT
+
+| Review | Trigger | Why | Runs | Status | Findings |
+|--------|---------|-----|------|--------|----------|
+| CEO Review | `/plan-ceo-review` | Scope & strategy | 0 | — | — |
+| Codex Review | `/codex review` | Independent 2nd opinion | 0 | — | — |
+| Eng Review | `/plan-eng-review` | Architecture & tests (required) | 1 | issues_found | 6 issues, 0 critical gaps |
+| Design Review | `/plan-design-review` | UI/UX gaps | 0 | — | — |
+| DX Review | `/plan-devex-review` | Developer experience gaps | 0 | — | — |
+
+Step 0 scope: accepted in full, split across two branches (T1-T4 here, T5-T8 on
+`feat/design-refresh`).
+
+Findings and disposition:
+1. Route transition was enter-only — kept enter-only by decision D3, spec wording corrected.
+2. `MotionProvider` was mounted in `(app)` then moved — now mounted at the root in Task 1.
+3. `.font-display` duplicated the new roles — retired in Task 2, 13 call sites migrate.
+4. Stagger was unbounded (7s for 200 rows) — capped at `STAGGER_MAX_ITEMS`, asserted by test.
+5. `Disclosure` has one consumer — accepted, recorded in NOT in scope.
+6. `AppSidebar` test may assert nav item count — flagged in Task 4 Step 8.
+
+**VERDICT:** ENG CLEARED — ready to implement.
+
+NO UNRESOLVED DECISIONS

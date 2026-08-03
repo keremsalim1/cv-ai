@@ -113,7 +113,7 @@ function ScorePageInner() {
 
   if (!cvs) {
     return (
-      <main className="mx-auto w-full max-w-2xl px-5 py-12 sm:px-8">
+      <main className="mx-auto w-full max-w-2xl px-5 py-16 sm:px-8">
         <div className="h-40 animate-pulse rounded-2xl bg-muted/70" aria-hidden />
         <span className="sr-only">{t('common.loading')}</span>
       </main>
@@ -123,20 +123,20 @@ function ScorePageInner() {
   const band = result ? bandFor(result.percent) : BAND.high
 
   return (
-    <main className="mx-auto flex w-full max-w-2xl flex-col gap-7 px-5 py-12 sm:px-8">
+    <main className="mx-auto flex w-full max-w-2xl flex-col gap-7 px-5 py-16 sm:px-8">
       <header>
         <p className="flex items-center gap-1.5 font-mono text-xs uppercase tracking-[0.18em] text-primary/80">
           <Sparkles aria-hidden className="size-3.5" />
           {t('score.title')}
         </p>
-        <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight text-ink">
+        <h1 className="type-title mt-2 text-ink">
           {cv?.parsed_data.full_name ?? ''}
         </h1>
       </header>
 
       {cvs.length === 0 ? (
         <div className="flex flex-col items-center gap-4 rounded-2xl border border-dashed border-border bg-card/50 px-6 py-16 text-center">
-          <p className="max-w-xs text-[15px] leading-relaxed text-muted-foreground">
+          <p className="max-w-xs type-body text-muted-foreground">
             {t('common.noCvs')}
           </p>
           <Link href="/dashboard" className={cn(buttonVariants({ size: 'sm' }))}>
@@ -144,9 +144,9 @@ function ScorePageInner() {
           </Link>
         </div>
       ) : (
-        <form onSubmit={run} className="flex flex-col gap-4 rounded-2xl bg-card p-6 ring-1 ring-foreground/10">
+        <form onSubmit={run} className="flex flex-col gap-4 rounded-2xl bg-card p-6 shadow-e1 ring-1 ring-foreground/[0.07]">
           <CvSelect cvs={cvs} value={selected} onChange={(id) => { setSelected(id); setResult(null); setCached(false) }} />
-          <label className="flex flex-col gap-1.5 text-sm font-medium text-foreground">
+          <label className="type-ui flex flex-col gap-1.5 text-foreground">
             {t('score.urlLabel')}
             <Input
               type="url"
@@ -161,13 +161,13 @@ function ScorePageInner() {
             {t('score.urlHint')}
           </p>
           {showPaste && (
-            <label className="flex flex-col gap-1.5 text-sm font-medium text-foreground">
+            <label className="type-ui flex flex-col gap-1.5 text-foreground">
               {t('score.pasteLabel')}
               <Textarea rows={8} value={text} onChange={(e) => setText(e.target.value)} className="text-base" />
             </label>
           )}
           {error && (
-            <p className="flex items-start gap-2 rounded-md bg-warning/10 px-3 py-2 text-sm text-warning-foreground">
+            <p className="type-ui flex items-start gap-2 rounded-md bg-warning/10 px-3 py-2 text-warning-foreground">
               <AlertTriangle aria-hidden className="mt-0.5 size-4 shrink-0 text-warning" />
               {error}
             </p>
@@ -182,7 +182,7 @@ function ScorePageInner() {
       {result && (
         <div className="flex flex-col gap-5 motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-3 motion-safe:duration-500">
           {cached && (
-            <p className="text-center font-mono text-xs tracking-wide text-muted-foreground">
+            <p className="type-meta text-center text-muted-foreground">
               {t('score.cached')}
             </p>
           )}
@@ -229,7 +229,7 @@ function ReasonBlock({
   icon, title, items,
 }: { icon: React.ReactNode; title: string; items: string[] }) {
   return (
-    <section className="rounded-xl bg-card p-4 ring-1 ring-foreground/10">
+    <section className="rounded-xl bg-card p-4 shadow-e1 ring-1 ring-foreground/[0.07]">
       <h2 className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
         {icon}
         {title}

@@ -170,7 +170,7 @@ function OptimizePageInner() {
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-2xl flex-col gap-7 px-5 py-16 sm:px-8">
+    <main className="mx-auto flex w-full max-w-2xl flex-col gap-10 px-5 py-16 sm:px-8">
       <header>
         <p className="flex items-center gap-1.5 font-mono text-xs uppercase tracking-[0.18em] text-primary/80">
           <Send aria-hidden className="size-3.5" />

@@ -26,8 +26,8 @@ export default function Home() {
               {t('badge')}
             </span>
 
-            <h1 className="type-display mt-5 text-ink">
-              CV&apos;nizi <span className="italic text-primary">yapay zeka</span> ile işe hazırlayın
+            <h1 className="type-display mt-5 text-balance text-ink">
+              CV&apos;nizi <span className="whitespace-nowrap italic text-primary">yapay zeka</span> ile işe hazırlayın
             </h1>
 
             <p className="type-body mt-5 max-w-md text-muted-foreground">

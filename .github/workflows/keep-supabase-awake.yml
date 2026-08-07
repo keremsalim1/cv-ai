@@ -1,0 +1,34 @@
+# Supabase pauses a free-tier project after 7 days without activity, and this
+# project has no deployment — between coding sessions nothing touches the
+# database. One real query a day keeps it out of that window.
+name: Keep Supabase awake
+
+on:
+  schedule:
+    # 06:17 UTC daily. Off-the-hour on purpose: GitHub delays cron jobs that
+    # pile up on :00, and a delayed run here is a paused project later.
+    - cron: '17 6 * * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Query the database
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          # A table read, not a health endpoint: activity is measured at the
+          # database, so the request has to reach Postgres. RLS returns an
+          # empty array to the anon key, which is a successful query.
+          status=$(curl --silent --show-error --max-time 30 \
+            --output /dev/null --write-out '%{http_code}' \
+            "${SUPABASE_URL}/rest/v1/cvs?select=id&limit=1" \
+            --header "apikey: ${SUPABASE_ANON_KEY}" \
+            --header "Authorization: Bearer ${SUPABASE_ANON_KEY}")
+          echo "HTTP ${status}"
+          if [ "$status" != "200" ]; then
+            echo "Supabase did not answer with 200 — the project may be paused again." >&2
+            exit 1
+          fi

@@ -1,6 +1,7 @@
 from pathlib import Path
 
-from app.services.page_analysis import detect_captcha, detect_login, extract_form
+from app.services.page_analysis import (detect_blocked, detect_captcha,
+                                        detect_login, extract_form)
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
@@ -102,3 +103,26 @@ def test_detect_login():
 def test_detect_captcha():
     assert detect_captcha(_read("captcha_page.html")) is True
     assert detect_captcha(_read("greenhouse_like.html")) is False
+
+
+def test_a_hard_block_is_not_a_page_the_user_can_navigate_out_of():
+    # Reported as "no fields found" it reads as "go to the form and retry",
+    # advice that cannot work: the request was refused, there is no form.
+    assert detect_blocked(_read("blocked_page.html")) is True
+
+
+def test_a_block_is_not_offered_to_the_user_as_a_captcha():
+    # nothing on that page is solvable, so telling them to solve it is a lie
+    assert detect_captcha(_read("blocked_page.html")) is False
+
+
+def test_a_challenge_carrying_a_widget_stays_a_captcha():
+    # both pages ship the same cdn-cgi scripts; the widget is what separates
+    # "you can clear this yourself" from "you were refused"
+    html = _read("cloudflare_challenge_page.html")
+    assert detect_captcha(html) is True
+    assert detect_blocked(html) is False
+
+
+def test_an_ordinary_application_page_is_neither():
+    assert detect_blocked(_read("greenhouse_like.html")) is False

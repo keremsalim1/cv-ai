@@ -13,11 +13,13 @@ from app.config import get_settings
 class BrowserDriver(Protocol):
     def goto(self, url: str) -> None: ...
     def content(self) -> str: ...
-    def fill(self, xpath: str, value: str) -> None: ...
-    def select_by_label(self, xpath: str, label: str) -> None: ...
-    def click(self, xpath: str) -> None: ...
-    def set_checked(self, xpath: str, checked: bool) -> None: ...
-    def set_files(self, xpath: str, path: str) -> None: ...
+    def evaluate(self, script: str, frame: int = 0): ...
+    def frame_count(self) -> int: ...
+    def fill(self, selector: str, value: str, frame: int = 0) -> None: ...
+    def select_by_label(self, selector: str, label: str, frame: int = 0) -> None: ...
+    def click(self, selector: str, frame: int = 0) -> None: ...
+    def set_checked(self, selector: str, checked: bool, frame: int = 0) -> None: ...
+    def set_files(self, selector: str, path: str, frame: int = 0) -> None: ...
     def wait(self, ms: int) -> None: ...
     def screenshot(self) -> bytes: ...
     def close(self) -> None: ...
@@ -45,36 +47,69 @@ class PlaywrightDriver:
         self._page = self._context.pages[0] if self._context.pages else self._context.new_page()
         self._page.set_default_timeout(15_000)
 
+    @property
+    def _live(self):
+        """In assisted mode the user drives this browser by hand: portals open
+        the application in a new tab, and the tab we started on is abandoned or
+        closed. Resolve the page per call, newest first, so we always act on
+        what the user is actually looking at."""
+        for page in reversed(self._context.pages):
+            if page.is_closed():
+                continue
+            if page is not self._page:
+                page.set_default_timeout(15_000)
+                self._page = page
+            return page
+        return self._page      # nothing left alive; let the caller see the error
+
     def goto(self, url: str) -> None:
-        self._page.goto(url, wait_until="domcontentloaded", timeout=30_000)
+        page = self._live
+        page.goto(url, wait_until="domcontentloaded", timeout=30_000)
         # let client-side apps (Greenhouse, Lever) render the form
-        self._page.wait_for_timeout(2_000)
+        page.wait_for_timeout(2_000)
 
     def content(self) -> str:
-        return self._page.content()
+        return self._live.content()
 
-    def fill(self, xpath: str, value: str) -> None:
-        self._page.locator(f"xpath={xpath}").fill(value)
+    def _loc(self, selector: str, frame: int):
+        # page.frames[0] IS the main frame, so one path serves both cases.
+        # Playwright only auto-detects "//" and ".." as XPath, but lxml's
+        # getpath() yields "/html/body/..." with a single slash, which would be
+        # parsed as CSS. Prefix explicitly so the auto flow's paths keep working
+        # alongside the probe's "[data-cvai-ref=...]" CSS refs.
+        target = self._live.frames[frame]
+        if selector.startswith("/") or selector.startswith(".."):
+            return target.locator(f"xpath={selector}")
+        return target.locator(selector)
 
-    def select_by_label(self, xpath: str, label: str) -> None:
-        self._page.locator(f"xpath={xpath}").select_option(label=label)
+    def evaluate(self, script: str, frame: int = 0):
+        return self._live.frames[frame].evaluate(script)
 
-    def click(self, xpath: str) -> None:
-        self._page.locator(f"xpath={xpath}").click()
+    def frame_count(self) -> int:
+        return len(self._live.frames)
 
-    def set_checked(self, xpath: str, checked: bool) -> None:
+    def fill(self, selector: str, value: str, frame: int = 0) -> None:
+        self._loc(selector, frame).fill(value)
+
+    def select_by_label(self, selector: str, label: str, frame: int = 0) -> None:
+        self._loc(selector, frame).select_option(label=label)
+
+    def click(self, selector: str, frame: int = 0) -> None:
+        self._loc(selector, frame).click()
+
+    def set_checked(self, selector: str, checked: bool, frame: int = 0) -> None:
         # idempotent: no-op if the box already matches, so we never toggle a
         # pre-checked control into the wrong state.
-        self._page.locator(f"xpath={xpath}").set_checked(checked)
+        self._loc(selector, frame).set_checked(checked)
 
-    def set_files(self, xpath: str, path: str) -> None:
-        self._page.locator(f"xpath={xpath}").set_input_files(path)
+    def set_files(self, selector: str, path: str, frame: int = 0) -> None:
+        self._loc(selector, frame).set_input_files(path)
 
     def wait(self, ms: int) -> None:
-        self._page.wait_for_timeout(ms)
+        self._live.wait_for_timeout(ms)
 
     def screenshot(self) -> bytes:
-        return self._page.screenshot(full_page=False)
+        return self._live.screenshot(full_page=False)
 
     def close(self) -> None:
         try:

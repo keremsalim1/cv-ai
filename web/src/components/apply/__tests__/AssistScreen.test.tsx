@@ -25,8 +25,43 @@ it('shows the filled summary and screenshot', () => {
 })
 
 it('shows the no-form notice', () => {
+  // an older server that sends no reason still gets a sensible message
   renderWithIntl(<AssistScreen result={{ status: 'no_form' }} busy={false} onFill={vi.fn()} onFinish={vi.fn()} />)
-  expect(screen.getByText(/form bulunamadı/)).toBeInTheDocument()
+  expect(screen.getByText(/doldurulacak alan bulamadım/)).toBeInTheDocument()
+})
+
+it('names the fields the user still has to fill in by hand', () => {
+  renderWithIntl(<AssistScreen busy={false} onFill={vi.fn()} onFinish={vi.fn()}
+    result={{ ...FILLED, unfilled: [{ label: 'Ülke', reason: 'no visible option matched' }] }} />)
+  expect(screen.getByText(/Ülke/)).toBeInTheDocument()
+})
+
+it('explains a login wall instead of just saying no form was found', () => {
+  renderWithIntl(<AssistScreen result={{ status: 'no_form', reason: 'login_wall' }}
+    busy={false} onFill={vi.fn()} onFinish={vi.fn()} />)
+  // deliberately specific: the always-visible intro paragraph also mentions
+  // signing in, so a loose /giriş/ would pass without any code change
+  expect(screen.getByText(/giriş yapmanızı istiyor/)).toBeInTheDocument()
+  expect(screen.queryByText(/doldurulacak alan bulamadım/)).not.toBeInTheDocument()
+})
+
+it('explains a captcha as its own reason', () => {
+  renderWithIntl(<AssistScreen result={{ status: 'no_form', reason: 'captcha' }}
+    busy={false} onFill={vi.fn()} onFinish={vi.fn()} />)
+  expect(screen.getByText(/doğrulama/i)).toBeInTheDocument()
+})
+
+it('does not tell a blocked user to go find the form', () => {
+  renderWithIntl(<AssistScreen result={{ status: 'no_form', reason: 'blocked' }}
+    busy={false} onFill={vi.fn()} onFinish={vi.fn()} />)
+  expect(screen.getByText(/erişimimizi engelledi/)).toBeInTheDocument()
+  expect(screen.queryByText(/doldurulacak alan bulamadım/)).not.toBeInTheDocument()
+})
+
+it('tells the user to reopen the browser when they closed it', () => {
+  renderWithIntl(<AssistScreen result={{ status: 'no_form', reason: 'browser_closed' }}
+    busy={false} onFill={vi.fn()} onFinish={vi.fn()} />)
+  expect(screen.getByText(/tarayıcı penceresi kapanmış/)).toBeInTheDocument()
 })
 
 it('finish button triggers onFinish', async () => {

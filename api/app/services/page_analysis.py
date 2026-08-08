@@ -7,10 +7,22 @@ from app.schemas import FormField, FormSchema
 
 _TEXT_INPUT_TYPES = {"text", "email", "tel", "url", "number", "date", None, ""}
 _CAPTCHA_MARKERS = ("g-recaptcha", "h-captcha", "cf-turnstile", "recaptcha/api")
+# A refusal ships the same challenge scripts as a solvable check but no widget.
+_BLOCK_MARKERS = ("/cdn-cgi/challenge-platform", "Ray ID")
 
 
 def detect_captcha(page_html: str) -> bool:
     return any(marker in page_html for marker in _CAPTCHA_MARKERS)
+
+
+def detect_blocked(page_html: str) -> bool:
+    """The edge refused the request outright. Distinct from a captcha, and the
+    distinction is the whole point: a captcha is something the user can clear,
+    a block is not, so telling them to solve it or to navigate onward is advice
+    that cannot work."""
+    if detect_captcha(page_html):
+        return False
+    return any(marker in page_html for marker in _BLOCK_MARKERS)
 
 
 def detect_login(page_html: str) -> bool:

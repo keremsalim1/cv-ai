@@ -65,6 +65,18 @@ it('shows each application with its stage', async () => {
   expect(screen.getByText('Ret')).toBeInTheDocument()
 })
 
+it('still lists applications when the inbox status call fails', async () => {
+  // The mailbox is an optional add-on. An assisted application is written to
+  // the database by the browser and owes the inbox nothing, so a failing
+  // /inbox/status must not take the list down with it.
+  inboxStatus.mockRejectedValue(new Error('inbox unavailable'))
+  listApplications.mockResolvedValue([application()])
+
+  renderWithIntl(<ApplicationsPage />)
+
+  expect(await screen.findByText('Acme')).toBeInTheDocument()
+})
+
 it('reveals the email behind a stage when asked why', async () => {
   listApplications.mockResolvedValue([application()])
   listApplicationEvents.mockResolvedValue([{

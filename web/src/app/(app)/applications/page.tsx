@@ -164,7 +164,11 @@ export default function ApplicationsPage() {
         <Stagger as="ul" className="flex flex-col gap-3">
           {rows.map((row, i) => (
             <StaggerItem as="li" key={row.id} index={i}>
-              <ApplicationCard row={row} loadEvents={loadEvents} />
+              <ApplicationCard
+                row={row}
+                loadEvents={loadEvents}
+                mailboxConnected={status?.connected === true}
+              />
             </StaggerItem>
           ))}
         </Stagger>

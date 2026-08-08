@@ -6,9 +6,12 @@ import { PressableCard } from '@/components/motion/PressableCard'
 import type { ApplicationEventRow, ApplicationRow } from '@/types/db'
 import { StageBadge } from './StageBadge'
 
-export function ApplicationCard({ row, loadEvents }: {
+export function ApplicationCard({ row, loadEvents, mailboxConnected }: {
   row: ApplicationRow
   loadEvents: (id: string) => Promise<ApplicationEventRow[]>
+  // Without a mailbox there is no watch to report on, and saying "no email
+  // yet" would promise one that is not running.
+  mailboxConnected: boolean
 }) {
   const t = useTranslations('applications')
   const [events, setEvents] = useState<ApplicationEventRow[] | null>(null)
@@ -47,7 +50,9 @@ export function ApplicationCard({ row, loadEvents }: {
           {events === null ? (
             <span className="type-meta text-muted-foreground">…</span>
           ) : events.length === 0 ? (
-            <span className="type-meta text-muted-foreground">{t('noEvents')}</span>
+            <span className="type-meta text-muted-foreground">
+              {mailboxConnected ? t('noEvents') : t('noMailbox')}
+            </span>
           ) : (
             events.map((e) => (
               <div key={e.id} className="flex flex-col gap-0.5">

@@ -92,6 +92,20 @@ it('reveals the email behind a stage when asked why', async () => {
   expect(screen.getByText(/no-reply@greenhouse.io/)).toBeInTheDocument()
 })
 
+it('does not claim to be watching email when no mailbox is connected', async () => {
+  // "We have not seen an email for this application yet" promises a watch that
+  // is not running: nothing was connected, so nothing will ever arrive.
+  inboxStatus.mockResolvedValue({ connected: false, email: null, last_synced_at: null, status: null })
+  listApplications.mockResolvedValue([application()])
+  listApplicationEvents.mockResolvedValue([])
+  renderWithIntl(<ApplicationsPage />)
+
+  await userEvent.click(await screen.findByRole('button', { name: 'Neden?' }))
+
+  expect(await screen.findByText(/Gmail bağlı değil/)).toBeInTheDocument()
+  expect(screen.queryByText(/henüz bir e-posta görmedik/)).not.toBeInTheDocument()
+})
+
 it('syncs on demand and reloads the list', async () => {
   listApplications.mockResolvedValue([application()])
   renderWithIntl(<ApplicationsPage />)

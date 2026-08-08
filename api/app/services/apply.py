@@ -32,7 +32,10 @@ SYSTEM = (
     "Input JSON: cv, job_text, form (fields with id/label/type/options). "
     "Respond ONLY with JSON: "
     '{{"cv": <optimized CV, same schema>, "changes": [str], '
-    '"cover_letter": str, "answers": [{{"field_id": str, "value": str}}]}}. '
+    '"cover_letter": str, "answers": [{{"field_id": str, "value": str}}], '
+    '"company": str|null, "title": str|null}}. '
+    "company/title: the hiring organization and the role, exactly as the "
+    "posting names them; null if it does not say. "
     "Rules: NEVER invent facts absent from the CV — only reorder, reword and "
     "emphasize. changes = short user-facing list of what you altered. "
     "cover_letter: always write one, first person, active voice, grounded in "
@@ -50,6 +53,10 @@ class PrepareOut(BaseModel):
     changes: list[str] = []
     cover_letter: str | None = None
     answers: list[FieldAnswer] = []
+    # Read off the posting the model was already given, so the saved
+    # application can name itself instead of landing in the list as "unknown".
+    company: str | None = None
+    title: str | None = None
 
 
 ASSIST_SYSTEM = (
@@ -170,6 +177,8 @@ def prepare_application(cv: CVData, url: str, language: str, headed: bool,
             "cover_letter": out.cover_letter,
             "answers": [a.model_dump() for a in out.answers],
             "job_text": job_text,
+            "company": out.company,
+            "title": out.title,
         }
     finally:
         driver.close()

@@ -107,6 +107,7 @@
     "empty": "Henüz başvuru yok.",
     "why": "Neden?",
     "noEvents": "Bu başvuru için henüz bir e-posta görmedik.",
+    "noMailbox": "Gmail bağlı değil, bu yüzden bu başvuru e-posta üzerinden takip edilmiyor.",
     "eventFrom": "Gönderen",
     "unknownCompany": "Şirket belirtilmemiş",
     "stage": {

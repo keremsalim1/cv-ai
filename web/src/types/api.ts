@@ -85,6 +85,9 @@ export interface OptimizedPayload {
   cover_letter: string | null
   answers: FieldAnswer[]
   job_text: string
+  // Read off the posting during prepare; null when it does not name them.
+  company: string | null
+  title: string | null
 }
 
 export type PrepareResult =

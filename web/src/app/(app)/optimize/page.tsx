@@ -87,6 +87,7 @@ function OptimizePageInner() {
         url: url.trim(), jobText: optimized.job_text, coverLetter,
         form: optimized.form, answers, changes: optimized.changes,
         status: mode === 'submitted' ? 'submitted' : 'delivered',
+        company: optimized.company, title: optimized.title,
       })
     } catch (err) {
       showError(err)
@@ -123,8 +124,10 @@ function OptimizePageInner() {
     if (!cv || !url.trim()) return
     // login-mode has no optimized payload; synthesize one from the selected CV
     if (!payload) {
+      // No posting was read on this path, so there is no company to name.
       setPayload({ status: 'form_not_found', cv: cv.parsed_data, form: [],
-        changes: [], cover_letter: '', answers: [], job_text: '' })
+        changes: [], cover_letter: '', answers: [], job_text: '',
+        company: null, title: null })
     }
     setError(null)
     setAssistResult(null)

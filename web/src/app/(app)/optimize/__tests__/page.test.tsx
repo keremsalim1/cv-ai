@@ -70,6 +70,21 @@ it('ready → approve → submit saves the application and shows the screenshot'
   expect((screen.getByRole('img') as HTMLImageElement).src).toContain('PNGDATA')
 })
 
+it('carries the company and title from the posting into the saved application', async () => {
+  ;(applyPrepare as Mock).mockResolvedValue({
+    status: 'ready', form: [], cv: CVS[0].parsed_data, changes: [], cover_letter: 'cl',
+    answers: [], job_text: 'jt', company: 'Acme', title: 'Backend Developer',
+  })
+  ;(applySubmit as Mock).mockResolvedValue({ status: 'submitted', screenshot: 'PNGDATA' })
+  renderWithIntl(<OptimizePage />)
+  await fillLinkAndPrepare()
+  await userEvent.click(await screen.findByRole('button', { name: 'Onayla ve Başvur' }))
+  await waitFor(() => expect(saveApplication).toHaveBeenCalledWith(
+    expect.anything(),
+    expect.objectContaining({ company: 'Acme', title: 'Backend Developer' }),
+  ))
+})
+
 it('captcha goes straight to delivery mode (no submit button)', async () => {
   ;(applyPrepare as Mock).mockResolvedValue({
     status: 'captcha', form: [], cv: CVS[0].parsed_data, changes: [], cover_letter: 'cl', answers: [], job_text: 'jt',

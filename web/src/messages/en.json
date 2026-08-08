@@ -107,6 +107,7 @@
     "empty": "No applications yet.",
     "why": "Why?",
     "noEvents": "We haven't seen an email for this application yet.",
+    "noMailbox": "Gmail is not connected, so this application is not being followed by email.",
     "eventFrom": "From",
     "unknownCompany": "Company not stated",
     "stage": {

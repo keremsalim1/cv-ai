@@ -10,6 +10,7 @@ import { messageKeyForCode } from '@/lib/errors'
 import { MAX_FILE_SIZE } from '@/lib/constants'
 import type { CvRow } from '@/types/db'
 import { CvCard } from '@/components/CvCard'
+import { Stagger, StaggerItem } from '@/components/motion/Stagger'
 
 export default function DashboardPage() {
   const t = useTranslations()
@@ -78,21 +79,21 @@ export default function DashboardPage() {
   const count = cvs?.length ?? 0
 
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-5 py-12 sm:px-8">
+    <main className="mx-auto flex w-full max-w-3xl flex-col gap-10 px-5 py-16 sm:px-8">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="font-display text-3xl font-semibold tracking-tight text-ink">
+          <h1 className="type-title text-ink">
             {t('dashboard.title')}
           </h1>
           {cvs !== null && count > 0 && (
-            <p className="mt-1 font-mono text-xs tracking-wide text-muted-foreground">
+            <p className="type-meta mt-2 text-muted-foreground">
               {count} {count === 1 ? 'CV' : 'CV'}
             </p>
           )}
         </div>
 
         <label
-          className={`inline-flex cursor-pointer items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground shadow-md shadow-primary/20 transition-all hover:-translate-y-0.5 hover:bg-primary/90 ${busy ? 'pointer-events-none opacity-70' : ''}`}
+          className={`inline-flex cursor-pointer items-center gap-2 rounded-lg bg-primary px-5 py-2.5 type-ui text-primary-foreground shadow-md shadow-primary/20 transition-all hover:-translate-y-0.5 hover:bg-primary/90 ${busy ? 'pointer-events-none opacity-70' : ''}`}
         >
           <Upload aria-hidden className="size-4" />
           {busy ? t('dashboard.uploading') : t('dashboard.upload')}
@@ -108,7 +109,7 @@ export default function DashboardPage() {
       </div>
 
       {error && (
-        <p className="flex items-center gap-2 rounded-lg bg-destructive/8 px-4 py-3 text-sm text-destructive">
+        <p className="flex items-center gap-2 rounded-lg bg-destructive/8 px-4 py-3 type-ui text-destructive">
           <AlertCircle aria-hidden className="size-4 shrink-0" />
           {error}
         </p>
@@ -125,14 +126,18 @@ export default function DashboardPage() {
           <span className="grid size-14 place-items-center rounded-full bg-primary/8 text-primary ring-1 ring-primary/12">
             <FileText aria-hidden className="size-6" />
           </span>
-          <p className="max-w-xs text-[15px] leading-relaxed text-muted-foreground">
+          <p className="max-w-xs type-body text-muted-foreground">
             {t('dashboard.empty')}
           </p>
         </div>
       ) : (
-        <div className="flex flex-col gap-3">
-          {cvs.map((cv) => <CvCard key={cv.id} cv={cv} onDelete={() => onDelete(cv)} />)}
-        </div>
+        <Stagger className="flex flex-col gap-3">
+          {cvs.map((cv, i) => (
+            <StaggerItem key={cv.id} index={i}>
+              <CvCard cv={cv} onDelete={() => onDelete(cv)} />
+            </StaggerItem>
+          ))}
+        </Stagger>
       )}
     </main>
   )

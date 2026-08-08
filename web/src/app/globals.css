@@ -222,7 +222,11 @@
   .type-display {
     font-family: var(--font-heading);
     font-feature-settings: "ss01";
-    font-size: clamp(2.5rem, 4vw, 3.5rem);
+    /* The cap is what sets the distance to .type-heading below it. At 3.5rem a
+       display heading and a section heading read as the same rank; 4.5rem keeps
+       roughly the 1.7x the page hierarchy depends on. The floor stays at 2.5rem
+       because that is the largest size that clears 375px without breaking. */
+    font-size: clamp(2.5rem, 5.5vw, 4.5rem);
     line-height: 1.05;
     letter-spacing: -0.02em;
     font-weight: 600;

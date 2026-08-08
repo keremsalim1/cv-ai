@@ -18,19 +18,19 @@ export default function Home() {
     <main className="flex flex-col">
       {/* ── Hero ─────────────────────────────────────────────── */}
       <section className="oxblood-wash grain relative overflow-hidden">
-        <div className="mx-auto grid max-w-6xl items-center gap-14 px-5 pt-16 pb-20 sm:px-8 lg:grid-cols-[1.05fr_0.95fr] lg:pt-24 lg:pb-28">
+        <div className="mx-auto grid max-w-6xl items-center gap-14 px-5 py-16 sm:px-8 lg:grid-cols-[1.05fr_0.95fr]">
           {/* Copy */}
           <div className="motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-4 motion-safe:duration-700">
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/25 bg-primary/5 px-3 py-1 text-xs font-medium text-primary">
+            <span className="type-meta inline-flex items-center gap-1.5 rounded-full border border-primary/25 bg-primary/5 px-3 py-1 text-primary">
               <Sparkles aria-hidden className="size-3.5" />
               {t('badge')}
             </span>
 
-            <h1 className="mt-5 font-display text-[clamp(2.6rem,6vw,4.6rem)] font-semibold leading-[1.02] tracking-[-0.02em] text-ink">
-              CV&apos;nizi <span className="italic text-primary">yapay zeka</span> ile işe hazırlayın
+            <h1 className="type-display mt-5 text-balance text-ink">
+              CV&apos;nizi <span className="whitespace-nowrap italic text-primary">yapay zeka</span> ile işe hazırlayın
             </h1>
 
-            <p className="mt-5 max-w-md text-lg leading-relaxed text-muted-foreground">
+            <p className="type-body mt-5 max-w-md text-muted-foreground">
               {t('subtitle')}
             </p>
 
@@ -56,7 +56,7 @@ export default function Home() {
               </Link>
             </div>
 
-            <p className="mt-5 font-mono text-xs tracking-wide text-muted-foreground">
+            <p className="type-meta mt-5 text-muted-foreground">
               {t('ctaNote')}
             </p>
           </div>
@@ -75,7 +75,7 @@ export default function Home() {
       </section>
 
       {/* ── How it works (a real, ordered sequence) ──────────── */}
-      <section id="nasil" className="mx-auto w-full max-w-6xl scroll-mt-20 px-5 py-20 sm:px-8">
+      <section id="nasil" className="mx-auto w-full max-w-6xl scroll-mt-20 px-5 py-16 sm:px-8">
         <h2 className="max-w-xl font-display text-[clamp(1.8rem,3.5vw,2.6rem)] font-semibold tracking-tight text-ink">
           {t('howTitle')}
         </h2>
@@ -96,14 +96,14 @@ export default function Home() {
                 <span className="font-mono text-sm text-primary/70">{s.n}</span>
               </div>
               <h3 className="mt-5 font-display text-xl font-semibold text-ink">{s.title}</h3>
-              <p className="mt-2 text-[15px] leading-relaxed text-muted-foreground">{s.body}</p>
+              <p className="type-body mt-2 text-muted-foreground">{s.body}</p>
             </li>
           ))}
         </ol>
       </section>
 
       {/* ── Closing CTA band (oxblood drench) ────────────────── */}
-      <section className="px-5 pb-20 sm:px-8">
+      <section className="px-5 pb-16 sm:px-8">
         <div className="grain relative mx-auto flex max-w-6xl flex-col items-center gap-6 overflow-hidden rounded-3xl bg-primary px-6 py-16 text-center text-primary-foreground">
           <h2 className="max-w-lg font-display text-[clamp(1.8rem,3.5vw,2.8rem)] font-semibold leading-tight text-balance">
             {t('closingTitle')}

@@ -13,7 +13,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
       <h2 className="font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-primary/80">
         {title}
       </h2>
-      <div className="mt-3 text-[15px] leading-relaxed text-foreground">{children}</div>
+      <div className="type-body mt-3 text-foreground">{children}</div>
     </section>
   )
 }
@@ -34,7 +34,7 @@ export default function CvDetailPage() {
 
   if (!cv) {
     return (
-      <main className="mx-auto w-full max-w-3xl px-5 py-12 sm:px-8">
+      <main className="mx-auto w-full max-w-3xl px-5 py-16 sm:px-8">
         <div className="h-40 animate-pulse rounded-2xl bg-muted/70" aria-hidden />
         <span className="sr-only">{t('common.loading')}</span>
       </main>
@@ -45,14 +45,14 @@ export default function CvDetailPage() {
   const contact = [d.email, d.phone, d.location].filter(Boolean).join(' · ')
 
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-5 py-12 sm:px-8">
+    <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-5 py-16 sm:px-8">
       {/* Header */}
       <div className="min-w-0">
-        <h1 className="font-display text-3xl font-semibold tracking-tight text-ink">
+        <h1 className="type-title text-ink">
           {d.full_name}
         </h1>
         {contact && (
-          <p className="mt-1.5 flex items-center gap-1.5 text-sm text-muted-foreground">
+          <p className="type-ui mt-1.5 flex items-center gap-1.5 text-muted-foreground">
             <Mail aria-hidden className="size-3.5" />
             {contact}
           </p>
@@ -60,7 +60,7 @@ export default function CvDetailPage() {
       </div>
 
       {/* Document panel — reads as an actual CV, not a stack of identical cards */}
-      <article className="grain flex flex-col gap-6 rounded-2xl bg-card p-7 ring-1 ring-foreground/10 sm:p-9">
+      <article className="grain flex flex-col gap-6 rounded-2xl bg-card p-7 shadow-e1 ring-1 ring-foreground/[0.07] sm:p-9">
         {d.summary && <Section title={t('cv.summary')}>{d.summary}</Section>}
 
         {d.experiences.length > 0 && (
@@ -77,7 +77,7 @@ export default function CvDetailPage() {
                     )}
                   </div>
                   {e.description && (
-                    <p className="mt-1 text-sm text-muted-foreground">{e.description}</p>
+                    <p className="type-ui mt-1 text-muted-foreground">{e.description}</p>
                   )}
                 </li>
               ))}

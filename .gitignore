@@ -7,3 +7,4 @@ node_modules/
 .next/
 .browser-profile/
 api.log
+.gstack/

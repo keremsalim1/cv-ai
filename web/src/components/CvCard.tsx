@@ -2,19 +2,19 @@ import Link from 'next/link'
 import { useTranslations } from 'next-intl'
 import { FileText, Eye, Target, Trash2, FileOutput } from 'lucide-react'
 import type { CvRow } from '@/types/db'
-import { Card } from '@/components/ui/card'
+import { PressableCard } from '@/components/motion/PressableCard'
 
 export function CvCard({ cv, onDelete }: { cv: CvRow; onDelete?: () => void }) {
   const t = useTranslations('dashboard')
   return (
-    <Card className="flex-row items-center justify-between gap-4 p-4 transition-all hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/5 hover:ring-primary/20">
+    <PressableCard className="flex items-center justify-between gap-4 rounded-xl bg-card p-4 text-card-foreground shadow-e1 ring-1 ring-foreground/[0.07] hover:shadow-e2">
       <div className="flex min-w-0 items-center gap-3">
         <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-primary/8 text-primary ring-1 ring-primary/12">
           <FileText aria-hidden className="size-5" />
         </span>
         <div className="min-w-0">
           <div className="flex items-center gap-2">
-            <span className="truncate font-medium text-foreground">{cv.parsed_data.full_name}</span>
+            <span className="type-ui truncate text-foreground">{cv.parsed_data.full_name}</span>
             {cv.is_ats && (
               <span className="rounded-full bg-success/12 px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-wider text-success">
                 {t('atsBadge')}
@@ -57,6 +57,6 @@ export function CvCard({ cv, onDelete }: { cv: CvRow; onDelete?: () => void }) {
           </button>
         )}
       </div>
-    </Card>
+    </PressableCard>
   )
 }

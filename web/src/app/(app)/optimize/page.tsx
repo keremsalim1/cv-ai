@@ -162,7 +162,7 @@ function OptimizePageInner() {
 
   if (!cvs) {
     return (
-      <main className="mx-auto w-full max-w-2xl px-5 py-12 sm:px-8">
+      <main className="mx-auto w-full max-w-2xl px-5 py-16 sm:px-8">
         <div className="h-40 animate-pulse rounded-2xl bg-muted/70" aria-hidden />
         <span className="sr-only">{t('common.loading')}</span>
       </main>
@@ -170,17 +170,17 @@ function OptimizePageInner() {
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-2xl flex-col gap-7 px-5 py-12 sm:px-8">
+    <main className="mx-auto flex w-full max-w-2xl flex-col gap-10 px-5 py-16 sm:px-8">
       <header>
         <p className="flex items-center gap-1.5 font-mono text-xs uppercase tracking-[0.18em] text-primary/80">
           <Send aria-hidden className="size-3.5" />
           {t('optimize.title')}
         </p>
-        <p className="mt-2 max-w-lg text-[15px] leading-relaxed text-muted-foreground">{t('optimize.intro')}</p>
+        <p className="mt-2 max-w-lg type-body text-muted-foreground">{t('optimize.intro')}</p>
       </header>
 
       {error && (
-        <p className="flex items-center gap-2 rounded-lg bg-destructive/8 px-4 py-3 text-sm text-destructive">
+        <p className="type-ui flex items-center gap-2 rounded-lg bg-destructive/8 px-4 py-3 text-destructive">
           <AlertCircle aria-hidden className="size-4 shrink-0" />
           {error}
         </p>
@@ -188,14 +188,14 @@ function OptimizePageInner() {
 
       {cvs.length === 0 ? (
         <div className="flex flex-col items-center gap-4 rounded-2xl border border-dashed border-border bg-card/50 px-6 py-16 text-center">
-          <p className="max-w-xs text-[15px] leading-relaxed text-muted-foreground">{t('common.noCvs')}</p>
+          <p className="max-w-xs type-body text-muted-foreground">{t('common.noCvs')}</p>
           <Link href="/dashboard" className={cn(buttonVariants({ size: 'sm' }))}>{t('nav.dashboard')}</Link>
         </div>
       ) : step === 'form' ? (
         <>
-        <div className="flex flex-col gap-4 rounded-2xl bg-card p-6 ring-1 ring-foreground/10">
+        <div className="flex flex-col gap-4 rounded-2xl bg-card p-6 shadow-e1 ring-1 ring-foreground/[0.07]">
           <CvSelect cvs={cvs} value={selected} onChange={setSelected} />
-          <label className="flex flex-col gap-1.5 text-sm font-medium text-foreground">
+          <label className="type-ui flex flex-col gap-1.5 text-foreground">
             {t('optimize.link')}
             <input
               type="url" value={url} onChange={(e) => setUrl(e.target.value)}
@@ -203,7 +203,7 @@ function OptimizePageInner() {
               className="h-11 rounded-lg border border-border bg-background px-3 text-base text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
             />
           </label>
-          <label className="flex flex-col gap-1.5 text-sm font-medium text-foreground">
+          <label className="type-ui flex flex-col gap-1.5 text-foreground">
             {t('optimize.language')}
             <select value={lang} onChange={(e) => setLang(e.target.value as 'tr' | 'en')}
               className="h-11 rounded-lg border border-border bg-background px-3 text-base font-medium text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50">
@@ -221,9 +221,9 @@ function OptimizePageInner() {
       ) : step === 'preparing' ? (
         <ProgressBar label={t(preparingLabel)} />
       ) : step === 'login' ? (
-        <div className="flex flex-col gap-4 rounded-2xl bg-card p-6 ring-1 ring-foreground/10">
+        <div className="flex flex-col gap-4 rounded-2xl bg-card p-6 shadow-e1 ring-1 ring-foreground/[0.07]">
           <h2 className="text-lg font-semibold text-foreground">{t('optimize.loginTitle')}</h2>
-          <p className="text-[15px] leading-relaxed text-muted-foreground">{t('optimize.loginIntro')}</p>
+          <p className="type-body text-muted-foreground">{t('optimize.loginIntro')}</p>
           <Button onClick={() => prepare(true)} className="h-11 gap-1.5 text-base">
             <LogIn aria-hidden className="size-4" />
             {t('optimize.loginButton')}
@@ -239,7 +239,7 @@ function OptimizePageInner() {
         <>
           <h1 className="text-xl font-semibold text-foreground">{t('optimize.approveTitle')}</h1>
           {payload.status !== 'ready' && (
-            <p className="rounded-lg bg-muted px-4 py-3 text-sm text-muted-foreground">{t('optimize.deliverModeNote')}</p>
+            <p className="type-ui rounded-lg bg-muted px-4 py-3 text-muted-foreground">{t('optimize.deliverModeNote')}</p>
           )}
           <ApprovalScreen payload={payload} canSubmit={payload.status === 'ready'}
             onSubmit={onSubmit} onDeliver={onDeliver}

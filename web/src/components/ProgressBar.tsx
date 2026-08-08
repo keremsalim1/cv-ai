@@ -4,8 +4,14 @@ import { useTranslations } from 'next-intl'
 
 /** Fake-determinate progress bar for LLM-backed waits (scoring, ATS
  *  conversion): fills fast at first, then eases toward 95% and holds
- *  until the operation completes and the component unmounts. Driven by
- *  JS state, not CSS animation, so it moves even with reduced motion.
+ *  until the operation completes and the component unmounts.
+ *
+ *  The fill is a `scaleX` transform rather than a width, so growing it
+ *  costs no layout. It is driven by a CSS transition rather than a spring
+ *  for two reasons: a spring's overshoot reads as wrong on a progress
+ *  indicator, and the transform has to stay readable from state so the
+ *  fill remains testable. `motion-reduce` drops the transition, leaving a
+ *  bar that still advances — one step per tick — without gliding.
  *  Past 60s a high-demand notice appears. */
 export function ProgressBar({ label }: { label: string }) {
   const t = useTranslations('common')
@@ -26,11 +32,11 @@ export function ProgressBar({ label }: { label: string }) {
     <div className="flex flex-col gap-1.5" role="status" aria-live="polite">
       <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
         <div
-          className="h-full rounded-full bg-primary transition-[width] duration-500 ease-linear"
-          style={{ width: `${pct}%` }}
+          className="h-full rounded-full bg-primary transition-transform duration-500 ease-linear motion-reduce:transition-none"
+          style={{ transform: `scaleX(${pct / 100})`, transformOrigin: '0 50%' }}
         />
       </div>
-      <p className="font-mono text-xs tracking-wide text-muted-foreground">{label}</p>
+      <p className="type-meta text-muted-foreground">{label}</p>
       {slow && (
         <p className="text-xs leading-snug text-warning-foreground">{t('longWait')}</p>
       )}

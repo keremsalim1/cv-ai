@@ -48,6 +48,25 @@ def test_prepare_ready(client, auth_headers):
     assert driver.closed is True
 
 
+def test_prepare_names_the_company_it_read(client, auth_headers):
+    # The application row is written from this response. Without the company and
+    # the title every assisted application reaches the list unnamed, even though
+    # the posting the model just read says both.
+    _use_driver(FakeDriver([_html("greenhouse_like.html")]))
+    override_llm([json.dumps({
+        **json.loads(PREPARE_OUT),
+        "company": "Acme", "title": "Backend Developer",
+    })])
+    r = client.post("/apply/prepare", headers=auth_headers, json={
+        "cv": json.loads(SAMPLE_CV_JSON), "url": "https://jobs.example.com/1",
+        "language": "en",
+    })
+    assert r.status_code == 200
+    body = r.json()
+    assert body["company"] == "Acme"
+    assert body["title"] == "Backend Developer"
+
+
 def test_prepare_login_required(client, auth_headers):
     _use_driver(FakeDriver([_html("login_wall.html")]))
     r = client.post("/apply/prepare", headers=auth_headers, json={

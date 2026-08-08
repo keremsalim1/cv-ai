@@ -28,3 +28,18 @@ it('uploads the pdf, saves optimized CV (is_ats=false) and records the applicati
     user_id: 'u1', cv_id: 'c1', optimized_cv_id: 'opt-cv', status: 'delivered',
   }))
 })
+
+it('records the company and title so the application can name itself', async () => {
+  // Without these the row reaches the list as "Şirket belirtilmemiş", even
+  // though /apply/prepare read both off the posting.
+  const sb = { storage: { from: () => ({ upload }) } } as unknown as SupabaseClient
+  await saveApplication(sb, {
+    userId: 'u1', sourceCvId: 'c1', optimizedCv: CV, pdf: new Blob(['%PDF']),
+    url: 'https://x', jobText: 'jt', coverLetter: 'cl', form: [], answers: [],
+    changes: ['a'], status: 'delivered',
+    company: 'Acme', title: 'Backend Developer',
+  })
+  expect(insertApplication).toHaveBeenCalledWith(sb, expect.objectContaining({
+    company: 'Acme', title: 'Backend Developer',
+  }))
+})

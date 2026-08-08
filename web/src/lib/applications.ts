@@ -14,6 +14,10 @@ export async function saveApplication(sb: SupabaseClient, args: {
   answers: FieldAnswer[]
   changes: string[]
   status: 'submitted' | 'delivered' | 'failed'
+  // Read off the posting during /apply/prepare. Null when it did not say —
+  // the row is still worth writing, it just cannot name itself.
+  company?: string | null
+  title?: string | null
 }): Promise<void> {
   const path = `${args.userId}/${crypto.randomUUID()}-optimized.pdf`
   const { error } = await sb.storage.from('cvs').upload(path, args.pdf, { contentType: 'application/pdf' })
@@ -27,5 +31,6 @@ export async function saveApplication(sb: SupabaseClient, args: {
     user_id: args.userId, cv_id: args.sourceCvId, optimized_cv_id: optimized.id,
     url: args.url, job_text: args.jobText, cover_letter: args.coverLetter,
     qa: { form: args.form, answers: args.answers }, changes: args.changes, status: args.status,
+    company: args.company ?? null, title: args.title ?? null,
   })
 }

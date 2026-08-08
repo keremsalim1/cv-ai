@@ -7,6 +7,8 @@ import { ApprovalScreen } from '@/components/apply/ApprovalScreen'
 
 const PAYLOAD: OptimizedPayload = {
   job_text: 'Backend developer',
+  company: 'Acme',
+  title: 'Backend Developer',
   cv: {
     full_name: 'Ada Lovelace', title: null, email: 'ada@x.com', phone: null, location: null,
     summary: 'Engineer', experiences: [], education: [], skills: ['Python'],

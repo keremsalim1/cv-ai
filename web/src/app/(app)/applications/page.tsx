@@ -68,10 +68,21 @@ export default function ApplicationsPage() {
           }
         }
       }
-      const current = await inboxStatus()
+      // The list is why this page exists; the mailbox is an add-on beside it.
+      // Load the rows first, and let the inbox fail on its own — an assisted
+      // application is written straight to the database and owes Gmail nothing,
+      // so a broken integration must not leave the page blank.
+      await loadRows()
+      if (cancelled) return
+
+      let current: InboxStatus
+      try {
+        current = await inboxStatus()
+      } catch {
+        return
+      }
       if (cancelled) return
       setStatus(current)
-      await loadRows()
       const last = current.last_synced_at ? Date.parse(current.last_synced_at) : 0
       if (current.connected && current.status === 'active' && Date.now() - last > STALE_MS) {
         await runSync()

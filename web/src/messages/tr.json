@@ -11,7 +11,8 @@
     "dashboard": "Panel",
     "score": "Skorla",
     "ats": "ATS'ye Çevir",
-    "optimize": "Optimize & Başvur"
+    "optimize": "Optimize & Başvur",
+    "applications": "Başvurularım"
   },
   "landing": {
     "title": "CV'nizi yapay zeka ile işe hazırlayın",
@@ -89,6 +90,33 @@
     "converting": "Dönüştürülüyor…",
     "done": "Dönüştürüldü! PDF indirildi ve ATS kopyası panelinize kaydedildi."
   },
+  "applications": {
+    "title": "Başvurularım",
+    "intro": "Gmail'ini bağla, şirketlerden gelen cevapları burada topluca gör.",
+    "connect": "Gmail'i bağla",
+    "connectExplain": "Sadece başvuru maillerini okuruz — hiçbir mail göndermez, silmez ve kişisel yazışmalarını indirmeyiz. İstediğin an bağlantıyı kesebilirsin.",
+    "connected": "Gmail'e bağlı",
+    "disconnect": "Bağlantıyı kes",
+    "refresh": "Yenile",
+    "refreshing": "Gelen kutusu taranıyor…",
+    "syncedAt": "{time} güncellendi",
+    "neverSynced": "Henüz taranmadı",
+    "partial": "Kısmen güncellendi — Gmail sınırına takıldık, birazdan tekrar dene.",
+    "denied": "Gmail bağlantısına izin verilmedi.",
+    "revoked": "Gmail bağlantın sona ermiş. Yeniden bağla.",
+    "empty": "Henüz başvuru yok.",
+    "why": "Neden?",
+    "noEvents": "Bu başvuru için henüz bir e-posta görmedik.",
+    "eventFrom": "Gönderen",
+    "unknownCompany": "Şirket belirtilmemiş",
+    "stage": {
+      "received": "Alındı",
+      "in_review": "Değerlendirmede",
+      "interview": "Mülakat",
+      "offer": "Teklif",
+      "rejected": "Ret"
+    }
+  },
   "optimize": {
     "title": "Optimize & Başvur",
     "intro": "Bir CV seçin ve başvuru linkini yapıştırın. CV'yi ilana göre uyarlar, form sorularını cevaplar ve başvurmadan önce her şeyi incelemenizi sağlarız.",
@@ -128,7 +156,13 @@
     "assistStarting": "Tarayıcı açılıyor…",
     "assistFill": "Formu doldur",
     "assistFilling": "Sayfa okunuyor ve dolduruluyor…",
-    "assistNoForm": "Bu sayfada form bulunamadı. Penceredeki başvuru formuna gidip tekrar deneyin.",
+    "assistUnfilled": "Şu alanları dolduramadım, elle tamamlamanız gerekiyor:",
+    "assistReasonLoginWall": "Bu sayfa giriş yapmanızı istiyor. Tarayıcıda giriş yapıp tekrar deneyin.",
+    "assistReasonCaptcha": "Bu sayfada bir doğrulama (captcha) var. Onu geçtikten sonra tekrar deneyin.",
+    "assistReasonNoControls": "Bu sayfada doldurulacak alan bulamadım. Başvuru formuna ilerleyip tekrar deneyin.",
+    "assistReasonUnsupported": "Bu sayfanın yapısını okuyamadım.",
+    "assistReasonBlocked": "Bu site erişimimizi engelledi. Bu ilana asistanla başvurulamıyor; optimize edilmiş CV'ni indirip elle başvurabilirsin.",
+    "assistReasonBrowserClosed": "Başvuru için açılan tarayıcı penceresi kapanmış. \"Bitir\"e basıp asistanlı başvuruyu yeniden başlatın.",
     "assistFilledCount": "{count} alan dolduruldu",
     "assistReviewNote": "Alanları gerçek tarayıcıda gözden geçirip GÖNDER'e kendiniz basın. Sonraki adım varsa yine \"Formu doldur\".",
     "assistFinish": "Bitir"
@@ -146,6 +180,7 @@
     "SESSION_NOT_FOUND": "Tarayıcı oturumu kapandı. Asistanlı başvuruyu yeniden başlatın.",
     "FORBIDDEN": "Bu tarayıcı oturumu başka bir hesaba ait.",
     "TOO_MANY_SESSIONS": "Sunucu şu anda kapasitesinin sınırında. Birkaç dakika sonra tekrar deneyin.",
+    "GMAIL_DISCONNECTED": "Gmail bağlantısı geçerli değil. E-posta hesabınızı yeniden bağlayın.",
     "UNKNOWN": "Beklenmeyen bir hata oluştu. Lütfen tekrar deneyin."
   },
   "common": {

@@ -12,14 +12,17 @@ it('shows the label and the bar fills as time passes', () => {
   const { container } = renderWithIntl(<ProgressBar label="Dönüştürülüyor…" />)
   expect(screen.getByText('Dönüştürülüyor…')).toBeInTheDocument()
 
+  // The fill is a scaleX transform, not a width — growing it must not cost layout.
   const bar = container.querySelector('[role="status"] div div') as HTMLElement
-  const before = parseFloat(bar.style.width)
+  const scaleOf = (el: HTMLElement) => parseFloat(el.style.transform.match(/scaleX\(([\d.]+)\)/)![1])
+
+  const before = scaleOf(bar)
   act(() => {
     vi.advanceTimersByTime(10_000)
   })
-  const after = parseFloat(bar.style.width)
+  const after = scaleOf(bar)
   expect(after).toBeGreaterThan(before)
-  expect(after).toBeLessThan(100)
+  expect(after).toBeLessThan(1)
 })
 
 it('shows the high-demand notice after 60 seconds', () => {

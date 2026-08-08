@@ -118,3 +118,59 @@ it('assistClose posts the session id', async () => {
   expect(String(url)).toBe('http://localhost:8000/apply/assist/close')
   expect(JSON.parse(init.body as string)).toEqual({ session_id: 'sess-1' })
 })
+
+it('inboxStatus gets the connection state', async () => {
+  const { inboxStatus } = await import('@/lib/api')
+  ;(global.fetch as Mock).mockResolvedValue(jsonResponse(200, {
+    connected: true, email: 'ada@example.com', last_synced_at: null, status: 'active',
+  }))
+  const out = await inboxStatus()
+  expect(out.email).toBe('ada@example.com')
+  const [url, init] = (global.fetch as Mock).mock.calls[0]
+  expect(String(url)).toBe('http://localhost:8000/inbox/status')
+  expect((init.headers as Record<string, string>).Authorization).toBe('Bearer tok-123')
+})
+
+it('inboxSync posts and returns what changed', async () => {
+  const { inboxSync } = await import('@/lib/api')
+  ;(global.fetch as Mock).mockResolvedValue(jsonResponse(200, {
+    scanned: 3, classified: 2, created: 1,
+    updated: [{ application_id: 'a1', company: 'Acme', from_stage: 'received', to_stage: 'rejected' }],
+    partial: false,
+  }))
+  const out = await inboxSync()
+  expect(out.updated[0].to_stage).toBe('rejected')
+  const [url, init] = (global.fetch as Mock).mock.calls[0]
+  expect(String(url)).toBe('http://localhost:8000/inbox/sync')
+  expect(init.method).toBe('POST')
+})
+
+it('inboxConnect posts the code under the name the API expects', async () => {
+  const { inboxConnect } = await import('@/lib/api')
+  ;(global.fetch as Mock).mockResolvedValue(jsonResponse(200, {
+    connected: true, email: 'ada@example.com',
+  }))
+  await inboxConnect('auth-code', 'http://localhost:3000/auth/gmail/callback')
+  const [url, init] = (global.fetch as Mock).mock.calls[0]
+  expect(String(url)).toBe('http://localhost:8000/inbox/connect')
+  expect(JSON.parse(init.body as string)).toEqual({
+    code: 'auth-code', redirect_uri: 'http://localhost:3000/auth/gmail/callback',
+  })
+})
+
+it('inboxDisconnect deletes the connection', async () => {
+  const { inboxDisconnect } = await import('@/lib/api')
+  ;(global.fetch as Mock).mockResolvedValue(jsonResponse(200, { connected: false }))
+  await inboxDisconnect()
+  const [url, init] = (global.fetch as Mock).mock.calls[0]
+  expect(String(url)).toBe('http://localhost:8000/inbox/connect')
+  expect(init.method).toBe('DELETE')
+})
+
+it('a revoked grant surfaces as GMAIL_DISCONNECTED', async () => {
+  const { inboxSync } = await import('@/lib/api')
+  ;(global.fetch as Mock).mockResolvedValue(
+    jsonResponse(409, { detail: { code: 'GMAIL_DISCONNECTED' } })
+  )
+  await expect(inboxSync()).rejects.toMatchObject({ code: 'GMAIL_DISCONNECTED', status: 409 })
+})

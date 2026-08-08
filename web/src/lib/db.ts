@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type {
-  ApplicationRow, CvRow, EvaluationRow, JobPostingRow, NewApplication, NewCv, NewEvaluation, NewJobPosting,
+  ApplicationEventRow, ApplicationRow, CvRow, EvaluationRow, JobPostingRow, NewApplication, NewCv,
+  NewEvaluation, NewJobPosting,
 } from '@/types/db'
 
 export async function listCvs(sb: SupabaseClient): Promise<CvRow[]> {
@@ -70,4 +71,15 @@ export async function insertApplication(
   const { data, error } = await sb.from('applications').insert(row).select().single()
   if (error) throw error
   return data as ApplicationRow
+}
+
+export async function listApplicationEvents(
+  sb: SupabaseClient, applicationId: string
+): Promise<ApplicationEventRow[]> {
+  const { data, error } = await sb
+    .from('application_events').select('*')
+    .eq('application_id', applicationId)
+    .order('received_at', { ascending: false })
+  if (error) throw error
+  return (data ?? []) as ApplicationEventRow[]
 }

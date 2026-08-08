@@ -77,7 +77,7 @@ function AtsPageInner() {
 
   if (!cvs) {
     return (
-      <main className="mx-auto w-full max-w-2xl px-5 py-12 sm:px-8">
+      <main className="mx-auto w-full max-w-2xl px-5 py-16 sm:px-8">
         <div className="h-40 animate-pulse rounded-2xl bg-muted/70" aria-hidden />
         <span className="sr-only">{t('common.loading')}</span>
       </main>
@@ -85,20 +85,20 @@ function AtsPageInner() {
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-2xl flex-col gap-7 px-5 py-12 sm:px-8">
+    <main className="mx-auto flex w-full max-w-2xl flex-col gap-10 px-5 py-16 sm:px-8">
       <header>
         <p className="flex items-center gap-1.5 font-mono text-xs uppercase tracking-[0.18em] text-primary/80">
           <FileOutput aria-hidden className="size-3.5" />
           {t('ats.title')}
         </p>
-        <p className="mt-2 max-w-lg text-[15px] leading-relaxed text-muted-foreground">
+        <p className="type-body mt-2 max-w-lg text-muted-foreground">
           {t('ats.intro')}
         </p>
       </header>
 
       {cvs.length === 0 ? (
         <div className="flex flex-col items-center gap-4 rounded-2xl border border-dashed border-border bg-card/50 px-6 py-16 text-center">
-          <p className="max-w-xs text-[15px] leading-relaxed text-muted-foreground">
+          <p className="max-w-xs type-body text-muted-foreground">
             {t('common.noCvs')}
           </p>
           <Link href="/dashboard" className={cn(buttonVariants({ size: 'sm' }))}>
@@ -106,27 +106,27 @@ function AtsPageInner() {
           </Link>
         </div>
       ) : (
-        <div className="flex flex-col gap-4 rounded-2xl bg-card p-6 ring-1 ring-foreground/10">
+        <div className="flex flex-col gap-4 rounded-2xl bg-card p-6 shadow-e1 ring-1 ring-foreground/[0.07]">
           <CvSelect cvs={cvs} value={selected} onChange={(id) => { setSelected(id); setDone(false); setError(null) }} />
-          <label className="flex flex-col gap-1.5 text-sm font-medium text-foreground">
+          <label className="type-ui flex flex-col gap-1.5 text-foreground">
             {t('ats.language')}
             <select
               value={atsLang}
               onChange={(e) => setAtsLang(e.target.value as 'tr' | 'en')}
-              className="h-11 rounded-lg border border-border bg-background px-3 text-base font-medium text-foreground transition-all outline-none hover:bg-muted focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+              className="h-11 rounded-lg border border-border bg-background px-3 text-base font-medium text-foreground outline-none hover:bg-muted focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
             >
               <option value="tr">Türkçe</option>
               <option value="en">English</option>
             </select>
           </label>
           {error && (
-            <p className="flex items-center gap-2 rounded-lg bg-destructive/8 px-4 py-3 text-sm text-destructive">
+            <p className="type-ui flex items-center gap-2 rounded-lg bg-destructive/8 px-4 py-3 text-destructive">
               <AlertCircle aria-hidden className="size-4 shrink-0" />
               {error}
             </p>
           )}
           {done && (
-            <p className="flex items-center gap-2 rounded-lg bg-success/10 px-4 py-3 text-sm text-success">
+            <p className="type-ui flex items-center gap-2 rounded-lg bg-success/10 px-4 py-3 text-success">
               <CheckCircle2 aria-hidden className="size-4 shrink-0" />
               {t('ats.done')}
             </p>

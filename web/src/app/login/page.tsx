@@ -39,13 +39,13 @@ export default function LoginPage() {
   return (
     <main className="oxblood-wash grain relative flex min-h-[calc(100dvh-3.5rem)] items-center justify-center px-5 py-14">
       <div className="w-full max-w-sm">
-        <h1 className="text-center font-display text-3xl font-semibold tracking-tight text-ink">
+        <h1 className="type-title text-center text-ink">
           {t('loginTitle')}
         </h1>
 
-        <Card className="mt-7 gap-5 p-7 shadow-xl shadow-primary/5">
+        <Card className="mt-7 gap-5 p-7 shadow-e1 ring-foreground/[0.07]">
           <form onSubmit={onSubmit} className="flex flex-col gap-4">
-            <label className="flex flex-col gap-1.5 text-sm font-medium text-foreground">
+            <label className="type-ui flex flex-col gap-1.5 text-foreground">
               {t('emailLabel')}
               <Input
                 type="email"
@@ -56,7 +56,7 @@ export default function LoginPage() {
                 placeholder="ada@ornek.com"
               />
             </label>
-            <label className="flex flex-col gap-1.5 text-sm font-medium text-foreground">
+            <label className="type-ui flex flex-col gap-1.5 text-foreground">
               {t('passwordLabel')}
               <Input
                 type="password"
@@ -68,7 +68,7 @@ export default function LoginPage() {
               />
             </label>
             {error && (
-              <p className="rounded-md bg-destructive/8 px-3 py-2 text-sm text-destructive">{error}</p>
+              <p className="type-meta rounded-md bg-destructive/8 px-3 py-2 text-destructive">{error}</p>
             )}
             <Button type="submit" className="h-11 text-base">{t('loginButton')}</Button>
           </form>
@@ -82,7 +82,7 @@ export default function LoginPage() {
 
           <Link
             href="/register"
-            className="text-center text-sm text-muted-foreground underline-offset-4 transition-colors hover:text-primary hover:underline"
+            className="type-ui text-center text-muted-foreground underline-offset-4 transition-colors hover:text-primary hover:underline"
           >
             {t('noAccount')}
           </Link>

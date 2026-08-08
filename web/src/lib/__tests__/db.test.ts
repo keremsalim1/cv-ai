@@ -1,5 +1,7 @@
 import { vi } from 'vitest'
-import { findEvaluation, insertApplication, insertCv, listApplications, listCvs } from '@/lib/db'
+import {
+  findEvaluation, insertApplication, insertCv, listApplicationEvents, listApplications, listCvs,
+} from '@/lib/db'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 // Chainable stub: every method returns the stub; awaiting it resolves `result`.
@@ -61,4 +63,15 @@ it('insertApplication returns the inserted row', async () => {
     user_id: 'u1', cv_id: 'c1', optimized_cv_id: 'c2', url: 'https://x', job_text: null,
     cover_letter: null, qa: {}, changes: [], status: 'delivered',
   })).resolves.toEqual(row)
+})
+
+it('lists an application\'s events newest first', async () => {
+  const { sb, from, q } = stubClient({ data: [{ id: 'e1' }], error: null })
+
+  const rows = await listApplicationEvents(sb, 'app-1')
+
+  expect(from).toHaveBeenCalledWith('application_events')
+  expect(q.eq).toHaveBeenCalledWith('application_id', 'app-1')
+  expect(q.order).toHaveBeenCalledWith('received_at', { ascending: false })
+  expect(rows).toEqual([{ id: 'e1' }])
 })

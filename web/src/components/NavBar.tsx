@@ -77,7 +77,7 @@ export function NavBar() {
             <>
               <Link
                 href="/dashboard"
-                className="rounded-md px-3 py-1.5 font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+                className="type-ui rounded-md px-3 py-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
               >
                 {t('dashboard')}
               </Link>
@@ -89,7 +89,7 @@ export function NavBar() {
             <>
               <Link
                 href="/login"
-                className="rounded-md px-3 py-1.5 font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+                className="type-ui rounded-md px-3 py-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
               >
                 {t('login')}
               </Link>

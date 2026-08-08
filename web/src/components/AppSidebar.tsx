@@ -2,7 +2,9 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import { LayoutDashboard, Target, FileOutput, Send } from 'lucide-react'
+import { motion } from 'motion/react'
+import { LayoutDashboard, Target, FileOutput, Send, Inbox } from 'lucide-react'
+import { flow } from '@/lib/motion'
 import { cn } from '@/lib/utils'
 
 const ITEMS = [
@@ -10,6 +12,7 @@ const ITEMS = [
   { href: '/score', key: 'score', icon: Target, also: [] },
   { href: '/ats', key: 'ats', icon: FileOutput, also: [] },
   { href: '/optimize', key: 'optimize', icon: Send, also: [] },
+  { href: '/applications', key: 'applications', icon: Inbox, also: [] },
 ] as const
 
 export function AppSidebar() {
@@ -33,12 +36,19 @@ export function AppSidebar() {
             href={item.href}
             aria-current={active ? 'page' : undefined}
             className={cn(
-              'flex shrink-0 items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+              'type-ui relative flex shrink-0 items-center gap-2.5 rounded-lg px-3 py-2',
               active
-                ? 'bg-primary/8 text-primary'
+                ? 'text-primary'
                 : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
             )}
           >
+            {active && (
+              <motion.span
+                layoutId="sidebar-active"
+                transition={flow}
+                className="absolute inset-0 -z-10 rounded-lg bg-primary/8"
+              />
+            )}
             <Icon aria-hidden className="size-4" />
             {t(item.key)}
           </Link>

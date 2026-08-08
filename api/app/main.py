@@ -8,6 +8,7 @@ from fastapi.responses import JSONResponse
 from app.routers import apply as apply_router
 from app.routers import ats as ats_router
 from app.routers import cv as cv_router
+from app.routers import inbox as inbox_router
 from app.routers import job as job_router
 from app.routers import score as score_router
 from app.services.llm import LLMError
@@ -62,3 +63,4 @@ app.include_router(job_router.router)
 app.include_router(score_router.router)
 app.include_router(ats_router.router)
 app.include_router(apply_router.router)
+app.include_router(inbox_router.router)

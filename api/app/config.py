@@ -22,6 +22,23 @@ class Settings(BaseSettings):
     supabase_jwt_secret: str = "insecure-test-secret-change-in-prod-0123456789"
     daily_ai_limit: int = 20
 
+    # The inbox feature is the only server-side database consumer. It needs the
+    # service role because the Gmail refresh token must be unreadable by any
+    # browser, which means no RLS policy can grant access to it. Every query
+    # this key issues filters on user_id explicitly — see supabase_db callers.
+    supabase_url: str = ""
+    supabase_service_key: str = ""
+
+    # Fernet key (44-char urlsafe base64) protecting stored Gmail refresh
+    # tokens. Generate with:
+    #   python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+    email_token_key: str = ""
+    # Our own Google OAuth client — deliberately not Supabase's. Supabase's
+    # provider_token expires in an hour and vanishes on session refresh, so it
+    # cannot serve a sync that runs whenever the user opens the page.
+    google_client_id: str = ""
+    google_client_secret: str = ""
+
     # Base dir for persistent Chromium profiles; each user gets their own
     # subdirectory (see browser.profile_dir_for) so their logins on job sites
     # survive between calls without ever being visible to another user. We never

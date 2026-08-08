@@ -42,6 +42,8 @@ export interface EvaluationRow {
 }
 export type NewEvaluation = Omit<EvaluationRow, 'id' | 'created_at'>
 
+export type ApplicationStage = 'received' | 'in_review' | 'interview' | 'offer' | 'rejected'
+
 export interface ApplicationRow {
   id: string
   user_id: string
@@ -52,7 +54,37 @@ export interface ApplicationRow {
   cover_letter: string | null
   qa: unknown
   changes: string[]
-  status: 'submitted' | 'delivered' | 'failed'
+  status: 'submitted' | 'delivered' | 'failed' | 'external'
+  company: string | null
+  title: string | null
+  stage: ApplicationStage
+  stage_updated_at: string | null
+  source: 'assisted' | 'email'
   created_at: string
 }
-export type NewApplication = Omit<ApplicationRow, 'id' | 'created_at'>
+export type NewApplication = Omit<
+  ApplicationRow, 'id' | 'created_at' | 'company' | 'title' | 'stage' | 'stage_updated_at' | 'source'
+> & Partial<Pick<ApplicationRow, 'company' | 'title' | 'stage' | 'source'>>
+
+export interface ApplicationEventRow {
+  id: string
+  user_id: string
+  application_id: string
+  source: 'email'
+  message_id: string
+  thread_id: string | null
+  from_address: string | null
+  subject: string | null
+  received_at: string | null
+  detected_stage: ApplicationStage | null
+  confidence: number | null
+  evidence: string | null
+  created_at: string
+}
+
+export interface EmailConnectionStatus {
+  user_id: string
+  email_address: string
+  last_synced_at: string | null
+  status: 'active' | 'revoked' | 'error'
+}

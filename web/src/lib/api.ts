@@ -143,3 +143,56 @@ export async function assistClose(sessionId: string): Promise<void> {
     })
   )
 }
+
+export interface InboxStatus {
+  connected: boolean
+  email: string | null
+  last_synced_at: string | null
+  status: 'active' | 'revoked' | 'error' | null
+}
+
+export interface SyncReport {
+  scanned: number
+  classified: number
+  created: number
+  updated: {
+    application_id: string
+    company: string | null
+    from_stage: string
+    to_stage: string
+  }[]
+  partial: boolean
+}
+
+export async function inboxStatus(): Promise<InboxStatus> {
+  const res = await ensureOk(
+    await fetch(apiUrl('/inbox/status'), { headers: await authHeaders() })
+  )
+  return res.json()
+}
+
+export async function inboxSync(): Promise<SyncReport> {
+  const res = await ensureOk(
+    await fetch(apiUrl('/inbox/sync'), { method: 'POST', headers: await authHeaders() })
+  )
+  return res.json()
+}
+
+export async function inboxConnect(
+  code: string, redirectUri: string
+): Promise<{ connected: boolean; email: string }> {
+  const res = await ensureOk(
+    await fetch(apiUrl('/inbox/connect'), {
+      method: 'POST',
+      headers: { ...(await authHeaders()), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code, redirect_uri: redirectUri }),
+    })
+  )
+  return res.json()
+}
+
+export async function inboxDisconnect(): Promise<void> {
+  await ensureOk(
+    await fetch(apiUrl('/inbox/connect'), { method: 'DELETE', headers: await authHeaders() })
+  )
+}

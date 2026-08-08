@@ -7,6 +7,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 const ROWS: ApplicationRow[] = [{
   id: 'a1', user_id: 'u1', cv_id: 'c1', optimized_cv_id: 'c2', url: 'https://acme.com/jobs/1',
   job_text: null, cover_letter: null, qa: {}, changes: [], status: 'submitted',
+  company: null, title: null, stage: 'received', stage_updated_at: null, source: 'assisted',
   created_at: '2026-07-20T00:00:00Z',
 }]
 vi.mock('@/lib/db', () => ({ listApplications: vi.fn(async () => ROWS) }))

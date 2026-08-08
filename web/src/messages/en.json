@@ -11,7 +11,8 @@
     "dashboard": "Dashboard",
     "score": "Score",
     "ats": "Convert to ATS",
-    "optimize": "Optimize & Apply"
+    "optimize": "Optimize & Apply",
+    "applications": "My applications"
   },
   "landing": {
     "title": "Get your CV job-ready with AI",
@@ -89,6 +90,33 @@
     "converting": "Converting…",
     "done": "Converted! The PDF was downloaded and the ATS copy was saved to your dashboard."
   },
+  "applications": {
+    "title": "My applications",
+    "intro": "Connect Gmail and see every company's reply in one place.",
+    "connect": "Connect Gmail",
+    "connectExplain": "We only read application emails — we never send or delete anything, and we don't download your personal correspondence. Disconnect whenever you like.",
+    "connected": "Gmail connected",
+    "disconnect": "Disconnect",
+    "refresh": "Refresh",
+    "refreshing": "Scanning your inbox…",
+    "syncedAt": "updated {time}",
+    "neverSynced": "Not scanned yet",
+    "partial": "Partially updated — we hit a Gmail limit. Try again shortly.",
+    "denied": "Gmail access was not granted.",
+    "revoked": "Your Gmail connection has expired. Reconnect to continue.",
+    "empty": "No applications yet.",
+    "why": "Why?",
+    "noEvents": "We haven't seen an email for this application yet.",
+    "eventFrom": "From",
+    "unknownCompany": "Company not stated",
+    "stage": {
+      "received": "Received",
+      "in_review": "In review",
+      "interview": "Interview",
+      "offer": "Offer",
+      "rejected": "Rejected"
+    }
+  },
   "optimize": {
     "title": "Optimize & Apply",
     "intro": "Pick a CV and paste a job application link. We tailor the CV to the posting, draft answers to the form, and let you review everything before applying.",
@@ -152,6 +180,7 @@
     "SESSION_NOT_FOUND": "The browser session was closed. Start the assisted apply again.",
     "FORBIDDEN": "This browser session belongs to another account.",
     "TOO_MANY_SESSIONS": "The server is at capacity right now. Try again in a few minutes.",
+    "GMAIL_DISCONNECTED": "The Gmail connection is no longer valid. Reconnect your email account.",
     "UNKNOWN": "Something went wrong. Please try again."
   },
   "common": {

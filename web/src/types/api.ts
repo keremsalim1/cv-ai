@@ -3,15 +3,35 @@
 export interface Experience {
   title: string
   company: string
+  location?: string | null
   start_date: string | null
   end_date: string | null
+  /** Legacy paragraph form; rows written before the ATS engine use this. */
   description: string | null
+  /** Set by the ATS rewrite; absent on older rows. */
+  bullets?: string[]
 }
 
 export interface Education {
   degree: string | null
   school: string
+  location?: string | null
+  start_date?: string | null
   year: string | null
+  details?: string[]
+}
+
+export interface Project {
+  name: string
+  kind: string | null
+  technologies: string[]
+  bullets: string[]
+}
+
+export interface Certification {
+  name: string
+  issuer: string | null
+  date: string | null
 }
 
 export interface SkillGroup {
@@ -35,8 +55,22 @@ export interface CVData {
   skills: string[]
   /** Set by the ATS rewrite; absent on raw parses and older rows. */
   skill_groups?: SkillGroup[]
+  /** Absent on older rows. */
+  projects?: Project[]
+  achievements?: string[]
   languages: string[]
-  certifications: string[]
+  /**
+   * The API coerces plain strings into Certification objects, but rows read
+   * straight out of Supabase were written before that existed and still hold
+   * strings. Every consumer must handle both.
+   */
+  certifications: (Certification | string)[]
+}
+
+export interface AtsRewriteResult {
+  cv: CVData
+  verification_required: string[]
+  optimization_summary: string[]
 }
 
 export interface JobCriteria {
@@ -82,6 +116,8 @@ export interface OptimizedPayload {
   form: FormField[]
   cv: CVData
   changes: string[]
+  /** Absent on responses from an API older than the ATS engine. */
+  verification_required?: string[]
   cover_letter: string | null
   answers: FieldAnswer[]
   job_text: string

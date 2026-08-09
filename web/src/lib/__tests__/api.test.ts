@@ -174,3 +174,18 @@ it('a revoked grant surfaces as GMAIL_DISCONNECTED', async () => {
   )
   await expect(inboxSync()).rejects.toMatchObject({ code: 'GMAIL_DISCONNECTED', status: 409 })
 })
+
+it('atsRewrite returns the cv together with both note lists', async () => {
+  const { atsRewrite } = await import('@/lib/api')
+  ;(global.fetch as Mock).mockResolvedValue(jsonResponse(200, {
+    cv: CV,
+    verification_required: ['Confirm the end date.'],
+    optimization_summary: ['Grouped skills.'],
+  }))
+  const result = await atsRewrite(CV, 'en')
+  expect(result.cv.full_name).toBe('Ada')
+  expect(result.verification_required).toEqual(['Confirm the end date.'])
+  expect(result.optimization_summary).toEqual(['Grouped skills.'])
+  const [url] = (global.fetch as Mock).mock.calls[0]
+  expect(String(url)).toBe('http://localhost:8000/ats/rewrite')
+})

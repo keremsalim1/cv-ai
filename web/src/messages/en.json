@@ -67,7 +67,9 @@
     "education": "Education",
     "skills": "Skills",
     "languages": "Languages",
-    "certifications": "Certifications"
+    "certifications": "Certifications",
+    "projects": "Projects",
+    "achievements": "Achievements"
   },
   "score": {
     "title": "Fit Score",

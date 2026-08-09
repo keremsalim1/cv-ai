@@ -67,7 +67,9 @@
     "education": "Eğitim",
     "skills": "Beceriler",
     "languages": "Diller",
-    "certifications": "Sertifikalar"
+    "certifications": "Sertifikalar",
+    "projects": "Projeler",
+    "achievements": "Başarılar ve Aktiviteler"
   },
   "score": {
     "title": "Uygunluk Skoru",

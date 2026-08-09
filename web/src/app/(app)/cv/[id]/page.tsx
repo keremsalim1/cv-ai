@@ -6,6 +6,16 @@ import { Mail } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { getCv } from '@/lib/db'
 import type { CvRow } from '@/types/db'
+import type { Certification } from '@/types/api'
+
+/**
+ * Rows written before the ATS engine store certifications as plain strings, and
+ * this page reads parsed_data straight from the database — the API's coercion
+ * never runs on them.
+ */
+function certLabel(c: Certification | string): string {
+  return typeof c === 'string' ? c : [c.name, c.issuer, c.date].filter(Boolean).join(' | ')
+}
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -76,8 +86,39 @@ export default function CvDetailPage() {
                       </span>
                     )}
                   </div>
-                  {e.description && (
+                  {e.bullets?.length ? (
+                    <ul className="type-ui mt-1 list-disc pl-5 text-muted-foreground">
+                      {e.bullets.map((b, j) => <li key={j}>{b}</li>)}
+                    </ul>
+                  ) : e.description ? (
                     <p className="type-ui mt-1 text-muted-foreground">{e.description}</p>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          </Section>
+        )}
+
+        {(d.projects?.length ?? 0) > 0 && (
+          <Section title={t('cv.projects')}>
+            <ul className="flex flex-col gap-4">
+              {d.projects!.map((p, i) => (
+                <li key={i}>
+                  <div className="flex flex-wrap items-baseline gap-x-2">
+                    <span className="font-medium text-ink">{p.name}</span>
+                    {p.kind && (
+                      <span className="font-mono text-xs text-muted-foreground">{p.kind}</span>
+                    )}
+                  </div>
+                  {p.technologies.length > 0 && (
+                    <p className="type-ui mt-0.5 text-muted-foreground">
+                      {p.technologies.join(' · ')}
+                    </p>
+                  )}
+                  {p.bullets.length > 0 && (
+                    <ul className="type-ui mt-1 list-disc pl-5 text-muted-foreground">
+                      {p.bullets.map((b, j) => <li key={j}>{b}</li>)}
+                    </ul>
                   )}
                 </li>
               ))}
@@ -141,7 +182,19 @@ export default function CvDetailPage() {
         )}
 
         {d.certifications.length > 0 && (
-          <Section title={t('cv.certifications')}>{d.certifications.join(' · ')}</Section>
+          <Section title={t('cv.certifications')}>
+            <ul className="flex flex-col gap-1">
+              {d.certifications.map((c, i) => <li key={i}>{certLabel(c)}</li>)}
+            </ul>
+          </Section>
+        )}
+
+        {(d.achievements?.length ?? 0) > 0 && (
+          <Section title={t('cv.achievements')}>
+            <ul className="list-disc pl-5">
+              {d.achievements!.map((a, i) => <li key={i}>{a}</li>)}
+            </ul>
+          </Section>
         )}
       </article>
     </main>

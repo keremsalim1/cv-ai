@@ -169,7 +169,8 @@
     "assistReasonBrowserClosed": "Başvuru için açılan tarayıcı penceresi kapanmış. \"Bitir\"e basıp asistanlı başvuruyu yeniden başlatın.",
     "assistFilledCount": "{count} alan dolduruldu",
     "assistReviewNote": "Alanları gerçek tarayıcıda gözden geçirip GÖNDER'e kendiniz basın. Sonraki adım varsa yine \"Formu doldur\".",
-    "assistFinish": "Bitir"
+    "assistFinish": "Bitir",
+    "verification": "Doğrulaman gerekenler"
   },
   "errors": {
     "SCANNED_PDF": "Bu PDF taranmış görünüyor. Lütfen metin tabanlı bir PDF yükleyin.",

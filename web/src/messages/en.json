@@ -169,7 +169,8 @@
     "assistReasonBrowserClosed": "The browser window opened for this application has closed. Press \"Finish\" and start the assisted application again.",
     "assistFilledCount": "{count} fields filled",
     "assistReviewNote": "Review the fields in the real browser and submit there yourself. If there's another step, click \"Fill form\" again.",
-    "assistFinish": "Finish"
+    "assistFinish": "Finish",
+    "verification": "Worth confirming"
   },
   "errors": {
     "SCANNED_PDF": "This PDF looks scanned. Please upload a text-based PDF.",

@@ -39,6 +39,14 @@ export function ApprovalScreen({ payload, canSubmit, onSubmit, onDeliver, onAssi
             </ul>
           </div>
         )}
+        {(payload.verification_required?.length ?? 0) > 0 && (
+          <div data-testid="approval-verification">
+            <p className="mb-1 text-sm font-medium text-foreground">{t('verification')}</p>
+            <ul className="list-disc pl-5 text-sm text-muted-foreground">
+              {payload.verification_required!.map((v, i) => <li key={i}>{v}</li>)}
+            </ul>
+          </div>
+        )}
       </section>
 
       <label className="flex flex-col gap-1.5 text-sm font-medium text-foreground">

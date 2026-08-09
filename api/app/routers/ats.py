@@ -21,7 +21,7 @@ def rewrite(
     user_id: str = Depends(check_usage),
     llm: LLMClient = Depends(get_llm),
 ):
-    return {"cv": rewrite_ats(req.cv, req.language, llm)}
+    return rewrite_ats(req.cv, req.language, llm)
 
 
 @router.post("/pdf")

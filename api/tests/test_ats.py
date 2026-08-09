@@ -82,7 +82,7 @@ def test_rewrite_endpoint_accepts_category_alias(client, auth_headers):
     rewritten["skill_groups"] = [
         {"category": "Programlama Dilleri", "skills": ["Python", "C"]},
     ]
-    override_llm([json.dumps(rewritten)])
+    override_llm([json.dumps({"cv": rewritten})])
     r = client.post("/ats/rewrite", headers=auth_headers,
                     json={"cv": json.loads(SAMPLE_CV_JSON), "language": "tr"})
     assert r.status_code == 200
@@ -94,7 +94,7 @@ def test_rewrite_endpoint_returns_skill_groups(client, auth_headers):
     rewritten["skill_groups"] = [
         {"name": "Programming Languages", "skills": ["Python"]},
     ]
-    override_llm([json.dumps(rewritten)])
+    override_llm([json.dumps({"cv": rewritten})])
     r = client.post("/ats/rewrite", headers=auth_headers,
                     json={"cv": json.loads(SAMPLE_CV_JSON), "language": "en"})
     assert r.status_code == 200
@@ -102,11 +102,47 @@ def test_rewrite_endpoint_returns_skill_groups(client, auth_headers):
 
 
 def test_rewrite_endpoint(client, auth_headers):
-    override_llm([SAMPLE_CV_JSON])  # fake LLM returns rewritten CV
+    override_llm([json.dumps({"cv": json.loads(SAMPLE_CV_JSON)})])
     r = client.post("/ats/rewrite", headers=auth_headers,
                     json={"cv": json.loads(SAMPLE_CV_JSON), "language": "en"})
     assert r.status_code == 200
     assert r.json()["cv"]["full_name"] == "Ada Lovelace"
+
+
+def test_rewrite_endpoint_returns_verification_and_summary(client, auth_headers):
+    payload = {
+        "cv": json.loads(SAMPLE_CV_JSON),
+        "verification_required": ["Confirm the end date of the Developer role."],
+        "optimization_summary": ["Grouped skills by category."],
+    }
+    override_llm([json.dumps(payload)])
+    r = client.post("/ats/rewrite", headers=auth_headers,
+                    json={"cv": json.loads(SAMPLE_CV_JSON), "language": "en"})
+    assert r.status_code == 200
+    body = r.json()
+    assert body["cv"]["full_name"] == "Ada Lovelace"
+    assert body["verification_required"] == ["Confirm the end date of the Developer role."]
+    assert body["optimization_summary"] == ["Grouped skills by category."]
+
+
+def test_rewrite_endpoint_defaults_the_lists_to_empty(client, auth_headers):
+    override_llm([json.dumps({"cv": json.loads(SAMPLE_CV_JSON)})])
+    r = client.post("/ats/rewrite", headers=auth_headers,
+                    json={"cv": json.loads(SAMPLE_CV_JSON), "language": "en"})
+    assert r.status_code == 200
+    assert r.json()["verification_required"] == []
+    assert r.json()["optimization_summary"] == []
+
+
+def test_rewrite_sends_the_shared_rules(client, auth_headers):
+    from app.services.ats_prompt import ATS_RULES
+
+    fake = override_llm([json.dumps({"cv": json.loads(SAMPLE_CV_JSON)})])
+    client.post("/ats/rewrite", headers=auth_headers,
+                json={"cv": json.loads(SAMPLE_CV_JSON), "language": "tr"})
+    system = fake.calls[0]["messages"][0]["content"]
+    assert ATS_RULES in system
+    assert "Answer in language: tr." in system
 
 
 def test_pdf_endpoint(client, auth_headers):

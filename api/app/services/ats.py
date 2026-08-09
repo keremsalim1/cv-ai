@@ -1,30 +1,19 @@
 from pathlib import Path
 
 from fpdf import FPDF
+from pydantic import BaseModel
 
 from app.schemas import CVData
+from app.services.ats_prompt import build_rewrite_system
 from app.services.llm import MODEL_SMART, LLMClient
 
-SYSTEM = (
-    "You rewrite CVs to be ATS-compliant. Rules: standard section wording, "
-    "concise bullet-style descriptions, measurable achievements where the "
-    "original supports them, no invented facts, no tables/graphics/icons. "
-    "Write the summary in first person, active voice (e.g. Turkish 'ben dili': "
-    "'...geliştiriyorum', not '...geliştirmiştir'); never refer to the person "
-    "in third person. If 'title' is missing, derive it from the most recent "
-    "job title. Copy contact details and the linkedin/github/website URLs "
-    "through unchanged — never drop, shorten or reformat them. "
-    "Analyze the person's profession from the CV and fill 'skill_groups' as a "
-    'list of {{"name": str, "skills": [str]}} objects (the group label key is '
-    '"name", never "category"): group every skill under 3-5 group names that '
-    "fit THAT profession (e.g. a developer: Programming Languages / Frameworks "
-    "& Tools / CS Concepts / Soft Skills; a nurse, accountant or designer gets "
-    "groups natural to their own field — never force tech categories). Group "
-    "names must be in the target language. Keep the flat 'skills' list too, "
-    "with every skill appearing in exactly one group. "
-    "Answer in language: {language}. Respond ONLY with JSON in the same CV schema "
-    "you received."
-)
+
+class RewriteOut(BaseModel):
+    cv: CVData
+    # What the model could not confirm from the source, and what it changed.
+    # Neither reaches the PDF; both are shown next to the result.
+    verification_required: list[str] = []
+    optimization_summary: list[str] = []
 
 HEADINGS = {
     "tr": {"summary": "ÖZET", "experience": "İŞ DENEYİMİ", "education": "EĞİTİM",
@@ -47,9 +36,9 @@ def _find_fonts() -> tuple[str, str]:
     raise RuntimeError("No Unicode TTF font found; set font paths in ats.py")
 
 
-def rewrite_ats(cv: CVData, language: str, llm: LLMClient) -> CVData:
-    return llm.chat_json(MODEL_SMART, SYSTEM.format(language=language),
-                         cv.model_dump_json(), CVData)
+def rewrite_ats(cv: CVData, language: str, llm: LLMClient) -> RewriteOut:
+    return llm.chat_json(MODEL_SMART, build_rewrite_system(language),
+                         cv.model_dump_json(), RewriteOut)
 
 
 def render_pdf(cv: CVData, language: str) -> bytes:

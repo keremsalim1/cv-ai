@@ -151,3 +151,79 @@ def test_pdf_endpoint(client, auth_headers):
     assert r.status_code == 200
     assert r.headers["content-type"] == "application/pdf"
     assert r.content.startswith(b"%PDF")
+
+
+def test_render_pdf_uses_bullets_when_present():
+    import pymupdf
+
+    from app.schemas import Experience
+
+    cv = _cv()
+    cv.experiences = [Experience(title="Developer", company="Acme",
+                                 location="İstanbul, Türkiye",
+                                 start_date="Oca 2024", end_date="Devam Ediyor",
+                                 bullets=["Designed REST APIs.", "Tuned SQL queries."])]
+    text = pymupdf.open(stream=render_pdf(cv, "tr"), filetype="pdf")[0].get_text()
+    assert "Designed REST APIs." in text
+    assert "Tuned SQL queries." in text
+    assert "İstanbul, Türkiye" in text
+
+
+def test_render_pdf_falls_back_to_description():
+    import pymupdf
+
+    cv = _cv()  # SAMPLE_CV_JSON has description, no bullets
+    text = pymupdf.open(stream=render_pdf(cv, "en"), filetype="pdf")[0].get_text()
+    assert "Built compute engines." in text
+
+
+def test_render_pdf_includes_projects_and_achievements():
+    import pymupdf
+
+    from app.schemas import Project
+
+    cv = _cv()
+    cv.projects = [Project(name="Bombe", kind="academic", technologies=["Python", "C"],
+                           bullets=["Cracked ciphers."])]
+    cv.achievements = ["Best paper award, 1843"]
+    text = pymupdf.open(stream=render_pdf(cv, "en"), filetype="pdf")[0].get_text()
+    assert "PROJECTS" in text
+    assert "Bombe" in text and "academic" in text
+    assert "Python, C" in text
+    assert "ACHIEVEMENTS" in text
+    assert "Best paper award, 1843" in text
+
+
+def test_render_pdf_structured_certifications():
+    import pymupdf
+
+    from app.schemas import Certification
+
+    cv = _cv()
+    cv.certifications = [Certification(name="AWS SAA", issuer="Amazon", date="Mar 2024"),
+                         Certification(name="Scrum Master")]
+    text = pymupdf.open(stream=render_pdf(cv, "en"), filetype="pdf")[0].get_text()
+    assert "AWS SAA | Amazon | Mar 2024" in text
+    assert "Scrum Master" in text
+    assert "None" not in text
+
+
+def test_render_pdf_contact_block_is_split():
+    import pymupdf
+
+    cv = _cv()
+    cv.linkedin = "linkedin.com/in/ada"
+    cv.github = "github.com/ada"
+    lines = pymupdf.open(stream=render_pdf(cv, "en"), filetype="pdf")[0].get_text().splitlines()
+    contact = next(line for line in lines if "ada@example.com" in line)
+    links = next(line for line in lines if "linkedin.com/in/ada" in line)
+    assert contact != links          # the two blocks are on separate lines
+    assert "linkedin" not in contact
+
+
+def test_render_pdf_skills_heading_is_not_technical():
+    import pymupdf
+
+    text = pymupdf.open(stream=render_pdf(_cv(), "tr"), filetype="pdf")[0].get_text()
+    assert "BECERİLER" in text
+    assert "TEKNİK BECERİLER" not in text

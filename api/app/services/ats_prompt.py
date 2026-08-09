@@ -34,7 +34,7 @@ Emphasise experience for experienced candidates, education and projects for new 
 CONTACT
 Keep full_name, title, location, phone, email, linkedin, github and website exactly as given, and never invent a link.
 Drop photo, home address, national ID, marital status, date of birth, gender, religion, parents' details and referee contact details — unless the source states they are required for the target country or application type.
-If title is missing, derive it from the most recent job title.
+If title is missing, copy the most recent job title as it stands, keeping any qualifier it carries - an "Intern" stays "Intern", a "Junior Developer" stays "Junior Developer". Never write a title that claims more seniority than that role, and never build one out of the skills list. When there is no role at all, leave title null and say so in verification_required.
 
 SUMMARY
 Three to four lines: professional level, field, strongest capabilities, what stands out in the experience or project history, and the value to an employer.

@@ -38,6 +38,15 @@ def test_prompts_contain_no_unformatted_placeholders():
         assert "{language}" not in system
 
 
+def test_title_rule_forbids_inventing_seniority():
+    # The first probe against the real model turned an empty title into
+    # "Software Developer" for a candidate whose only role was an internship.
+    # The rule now has to name both halves: copy the role, invent nothing.
+    assert "copy the most recent job title" in ATS_RULES
+    assert "more seniority" in ATS_RULES
+    assert "out of the skills list" in ATS_RULES
+
+
 def test_accuracy_rules_lead_the_prompt():
     # The rules the model most needs to obey must not sit behind 2,000 words of
     # formatting guidance.

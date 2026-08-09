@@ -10,6 +10,7 @@ from pydantic import BaseModel
 from app.config import get_settings
 from app.schemas import CVData, FieldAnswer, FormField, FormSchema
 from app.services import ats
+from app.services.ats_prompt import build_apply_system
 from app.services.browser import BrowserDriver
 from app.services.form_build import build_form
 from app.services.llm import MODEL_SMART, LLMClient
@@ -27,30 +28,12 @@ LOGIN_POLL_SECONDS = 2
 # the page also offers a sign-in, so an optional login never blocks the user.
 MIN_JOB_TEXT = 200
 
-SYSTEM = (
-    "You optimize a CV for one specific job application and answer its form. "
-    "Input JSON: cv, job_text, form (fields with id/label/type/options). "
-    "Respond ONLY with JSON: "
-    '{{"cv": <optimized CV, same schema>, "changes": [str], '
-    '"cover_letter": str, "answers": [{{"field_id": str, "value": str}}], '
-    '"company": str|null, "title": str|null}}. '
-    "company/title: the hiring organization and the role, exactly as the "
-    "posting names them; null if it does not say. "
-    "Rules: NEVER invent facts absent from the CV — only reorder, reword and "
-    "emphasize. changes = short user-facing list of what you altered. "
-    "cover_letter: always write one, first person, active voice, grounded in "
-    "the CV and the posting. answers: one per form field except type=file; "
-    "identity fields (name/email/phone/location, and the LinkedIn/GitHub/"
-    "portfolio URLs from cv.linkedin/cv.github/cv.website) come from the CV; for "
-    "select/radio pick EXACTLY one option verbatim from options; if the CV "
-    "lacks the information, use value \"\" so the user fills it. "
-    "Answer in language: {language}."
-)
-
-
 class PrepareOut(BaseModel):
     cv: CVData
     changes: list[str] = []
+    # What the model could not confirm from the CV. Shown on the approval screen
+    # so the user fixes it before the application goes out, not after.
+    verification_required: list[str] = []
     cover_letter: str | None = None
     answers: list[FieldAnswer] = []
     # Read off the posting the model was already given, so the saved
@@ -167,13 +150,14 @@ def prepare_application(cv: CVData, url: str, language: str, headed: bool,
         enforce_limit(usage_store, user_id, get_settings().daily_ai_limit)
         user_payload = PrepareIn(cv=cv, job_text=job_text,
                                  form=schema.fields).model_dump_json()
-        out = llm.chat_json(MODEL_SMART, SYSTEM.format(language=language),
+        out = llm.chat_json(MODEL_SMART, build_apply_system(language),
                             user_payload, PrepareOut)
         return {
             "status": status,
             "form": [f.model_dump() for f in schema.fields],
             "cv": out.cv.model_dump(),
             "changes": out.changes,
+            "verification_required": out.verification_required,
             "cover_letter": out.cover_letter,
             "answers": [a.model_dump() for a in out.answers],
             "job_text": job_text,

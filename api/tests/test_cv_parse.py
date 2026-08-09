@@ -1,3 +1,5 @@
+import json
+
 from fpdf import FPDF
 
 from tests.conftest import SAMPLE_CV_JSON, override_llm
@@ -70,3 +72,27 @@ def test_requires_auth(client, sample_pdf_bytes):
     r = client.post("/cv/parse",
                     files={"file": ("cv.pdf", sample_pdf_bytes, "application/pdf")})
     assert r.status_code == 401
+
+
+def test_parser_prompt_asks_for_the_new_sections():
+    from app.services.cv_parser import SYSTEM
+
+    for field in ("projects", "achievements", "bullets", "issuer", "details"):
+        assert field in SYSTEM
+
+
+def test_parse_returns_projects_and_structured_certifications(client, auth_headers,
+                                                              sample_pdf_bytes):
+    parsed = json.loads(SAMPLE_CV_JSON)
+    parsed["projects"] = [{"name": "Bombe", "kind": "academic",
+                           "technologies": ["Python"], "bullets": ["Cracked ciphers."]}]
+    parsed["achievements"] = ["Best paper award, 1843"]
+    parsed["certifications"] = [{"name": "AWS SAA", "issuer": "Amazon", "date": "Mar 2024"}]
+    override_llm([json.dumps(parsed)])
+    r = client.post("/cv/parse", headers=auth_headers,
+                    files={"file": ("cv.pdf", sample_pdf_bytes, "application/pdf")})
+    assert r.status_code == 200
+    cv = r.json()["cv"]
+    assert cv["projects"][0]["kind"] == "academic"
+    assert cv["achievements"] == ["Best paper award, 1843"]
+    assert cv["certifications"][0]["issuer"] == "Amazon"

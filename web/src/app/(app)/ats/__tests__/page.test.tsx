@@ -67,7 +67,9 @@ it('preselects the CV from the query param', async () => {
 })
 
 it('converts, downloads the PDF and saves the ATS copy', async () => {
-  ;(atsRewrite as Mock).mockResolvedValue(CVS[0].parsed_data)
+  ;(atsRewrite as Mock).mockResolvedValue({
+    cv: CVS[0].parsed_data, verification_required: [], optimization_summary: [],
+  })
   ;(atsPdf as Mock).mockResolvedValue(new Blob(['%PDF'], { type: 'application/pdf' }))
   renderWithIntl(<AtsPage />)
   await screen.findByLabelText('CV')
@@ -85,4 +87,31 @@ it('shows the empty-CV state and hides the form when there are no CVs', async ()
   renderWithIntl(<AtsPage />)
   expect(await screen.findByText(/Henüz CV'niz yok/)).toBeInTheDocument()
   expect(screen.queryByRole('button', { name: "ATS'ye Çevir" })).not.toBeInTheDocument()
+})
+
+it('shows the verification and edit-summary panels after converting', async () => {
+  ;(atsRewrite as Mock).mockResolvedValue({
+    cv: CVS[0].parsed_data,
+    verification_required: ['Confirm the end date of the Developer role.'],
+    optimization_summary: ['Grouped skills by category.'],
+  })
+  ;(atsPdf as Mock).mockResolvedValue(new Blob(['%PDF'], { type: 'application/pdf' }))
+  renderWithIntl(<AtsPage />)
+  await screen.findByLabelText('CV')
+  await userEvent.click(screen.getByRole('button', { name: "ATS'ye Çevir" }))
+  expect(await screen.findByText('Confirm the end date of the Developer role.')).toBeInTheDocument()
+  expect(screen.getByText('Grouped skills by category.')).toBeInTheDocument()
+})
+
+it('shows no panels when both lists are empty', async () => {
+  ;(atsRewrite as Mock).mockResolvedValue({
+    cv: CVS[0].parsed_data, verification_required: [], optimization_summary: [],
+  })
+  ;(atsPdf as Mock).mockResolvedValue(new Blob(['%PDF'], { type: 'application/pdf' }))
+  renderWithIntl(<AtsPage />)
+  await screen.findByLabelText('CV')
+  await userEvent.click(screen.getByRole('button', { name: "ATS'ye Çevir" }))
+  expect(await screen.findByText(/Dönüştürüldü/)).toBeInTheDocument()
+  expect(screen.queryByTestId('ats-verification')).not.toBeInTheDocument()
+  expect(screen.queryByTestId('ats-summary')).not.toBeInTheDocument()
 })

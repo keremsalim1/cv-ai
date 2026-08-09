@@ -49,3 +49,15 @@ it('hides the submit button when canSubmit is false', () => {
   expect(screen.queryByRole('button', { name: 'Onayla ve Başvur' })).toBeNull()
   expect(screen.getByRole('button', { name: 'Sadece bana teslim et' })).toBeInTheDocument()
 })
+
+it('lists what the model could not confirm', () => {
+  renderWithIntl(<ApprovalScreen
+    payload={{ ...PAYLOAD, verification_required: ['Confirm the Acme role was not an internship.'] }}
+    canSubmit onSubmit={vi.fn()} onDeliver={vi.fn()} />)
+  expect(screen.getByText('Confirm the Acme role was not an internship.')).toBeInTheDocument()
+})
+
+it('omits the verification block when there is nothing to confirm', () => {
+  renderWithIntl(<ApprovalScreen payload={PAYLOAD} canSubmit onSubmit={vi.fn()} onDeliver={vi.fn()} />)
+  expect(screen.queryByTestId('approval-verification')).not.toBeInTheDocument()
+})

@@ -67,7 +67,9 @@
     "education": "Education",
     "skills": "Skills",
     "languages": "Languages",
-    "certifications": "Certifications"
+    "certifications": "Certifications",
+    "projects": "Projects",
+    "achievements": "Achievements"
   },
   "score": {
     "title": "Fit Score",
@@ -88,7 +90,10 @@
     "language": "Conversion language",
     "convert": "Convert to ATS",
     "converting": "Converting…",
-    "done": "Converted! The PDF was downloaded and the ATS copy was saved to your dashboard."
+    "done": "Converted! The PDF was downloaded and the ATS copy was saved to your dashboard.",
+    "verification": "Worth confirming",
+    "verificationIntro": "We left these out because the source CV was not clear. Add them yourself if they are right.",
+    "summary": "What we changed"
   },
   "applications": {
     "title": "My applications",
@@ -166,7 +171,8 @@
     "assistReasonBrowserClosed": "The browser window opened for this application has closed. Press \"Finish\" and start the assisted application again.",
     "assistFilledCount": "{count} fields filled",
     "assistReviewNote": "Review the fields in the real browser and submit there yourself. If there's another step, click \"Fill form\" again.",
-    "assistFinish": "Finish"
+    "assistFinish": "Finish",
+    "verification": "Worth confirming"
   },
   "errors": {
     "SCANNED_PDF": "This PDF looks scanned. Please upload a text-based PDF.",

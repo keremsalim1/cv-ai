@@ -27,6 +27,11 @@ function AtsPageInner() {
   const [busy, setBusy] = useState(false)
   const [done, setDone] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // What the rewrite could not confirm, and what it changed. Shown beside the
+  // result; neither belongs in the PDF.
+  const [notes, setNotes] = useState<{ verification: string[]; summary: string[] }>(
+    { verification: [], summary: [] }
+  )
 
   const load = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser()
@@ -49,9 +54,15 @@ function AtsPageInner() {
     if (!cv) return
     setError(null)
     setDone(false)
+    setNotes({ verification: [], summary: [] })
     setBusy(true)
     try {
-      const rewritten = await atsRewrite(cv.parsed_data, atsLang)
+      const result = await atsRewrite(cv.parsed_data, atsLang)
+      const rewritten = result.cv
+      setNotes({
+        verification: result.verification_required ?? [],
+        summary: result.optimization_summary ?? [],
+      })
       const pdf = await atsPdf(rewritten, atsLang)
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new ApiError('NOT_AUTHENTICATED', 401)
@@ -107,7 +118,14 @@ function AtsPageInner() {
         </div>
       ) : (
         <div className="flex flex-col gap-4 rounded-2xl bg-card p-6 shadow-e1 ring-1 ring-foreground/[0.07]">
-          <CvSelect cvs={cvs} value={selected} onChange={(id) => { setSelected(id); setDone(false); setError(null) }} />
+          <CvSelect
+            cvs={cvs}
+            value={selected}
+            onChange={(id) => {
+              setSelected(id); setDone(false); setError(null)
+              setNotes({ verification: [], summary: [] })
+            }}
+          />
           <label className="type-ui flex flex-col gap-1.5 text-foreground">
             {t('ats.language')}
             <select
@@ -130,6 +148,23 @@ function AtsPageInner() {
               <CheckCircle2 aria-hidden className="size-4 shrink-0" />
               {t('ats.done')}
             </p>
+          )}
+          {notes.verification.length > 0 && (
+            <div data-testid="ats-verification" className="rounded-lg bg-secondary/60 px-4 py-3">
+              <p className="type-ui font-medium text-foreground">{t('ats.verification')}</p>
+              <p className="type-ui mt-0.5 text-muted-foreground">{t('ats.verificationIntro')}</p>
+              <ul className="type-ui mt-2 list-disc pl-5 text-muted-foreground">
+                {notes.verification.map((v, i) => <li key={i}>{v}</li>)}
+              </ul>
+            </div>
+          )}
+          {notes.summary.length > 0 && (
+            <div data-testid="ats-summary" className="rounded-lg bg-secondary/60 px-4 py-3">
+              <p className="type-ui font-medium text-foreground">{t('ats.summary')}</p>
+              <ul className="type-ui mt-2 list-disc pl-5 text-muted-foreground">
+                {notes.summary.map((s, i) => <li key={i}>{s}</li>)}
+              </ul>
+            </div>
           )}
           {busy && <ProgressBar label={t('ats.converting')} />}
           <Button onClick={convert} disabled={busy || !selected} className="h-11 gap-1.5 text-base">

@@ -166,3 +166,44 @@ def test_prepare_headed_waits_for_login(client, auth_headers):
     assert r.status_code == 200
     assert r.json()["status"] == "ready"
     assert driver.closed is True
+
+
+def test_prepare_returns_verification_required(client, auth_headers):
+    _use_driver(FakeDriver([_html("greenhouse_like.html")]))
+    out = json.loads(PREPARE_OUT)
+    out["verification_required"] = ["Confirm whether the Acme role was an internship."]
+    override_llm([json.dumps(out)])
+    r = client.post("/apply/prepare", headers=auth_headers, json={
+        "cv": json.loads(SAMPLE_CV_JSON), "url": "https://jobs.example.com/1",
+        "language": "en",
+    })
+    assert r.status_code == 200
+    assert r.json()["verification_required"] == [
+        "Confirm whether the Acme role was an internship."
+    ]
+
+
+def test_prepare_defaults_verification_required_to_empty(client, auth_headers):
+    _use_driver(FakeDriver([_html("greenhouse_like.html")]))
+    override_llm([PREPARE_OUT])
+    r = client.post("/apply/prepare", headers=auth_headers, json={
+        "cv": json.loads(SAMPLE_CV_JSON), "url": "https://jobs.example.com/1",
+        "language": "en",
+    })
+    assert r.status_code == 200
+    assert r.json()["verification_required"] == []
+
+
+def test_prepare_sends_the_shared_rules(client, auth_headers):
+    from app.services.ats_prompt import ATS_RULES
+
+    _use_driver(FakeDriver([_html("greenhouse_like.html")]))
+    fake = override_llm([PREPARE_OUT])
+    client.post("/apply/prepare", headers=auth_headers, json={
+        "cv": json.loads(SAMPLE_CV_JSON), "url": "https://jobs.example.com/1",
+        "language": "tr",
+    })
+    system = fake.calls[0]["messages"][0]["content"]
+    assert ATS_RULES in system
+    assert "job_text" in system
+    assert "Answer in language: tr." in system

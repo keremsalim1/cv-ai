@@ -67,7 +67,9 @@
     "education": "Eğitim",
     "skills": "Beceriler",
     "languages": "Diller",
-    "certifications": "Sertifikalar"
+    "certifications": "Sertifikalar",
+    "projects": "Projeler",
+    "achievements": "Başarılar ve Aktiviteler"
   },
   "score": {
     "title": "Uygunluk Skoru",
@@ -88,7 +90,10 @@
     "language": "Dönüştürme dili",
     "convert": "ATS'ye Çevir",
     "converting": "Dönüştürülüyor…",
-    "done": "Dönüştürüldü! PDF indirildi ve ATS kopyası panelinize kaydedildi."
+    "done": "Dönüştürüldü! PDF indirildi ve ATS kopyası panelinize kaydedildi.",
+    "verification": "Doğrulaman gerekenler",
+    "verificationIntro": "Bu bilgileri CV'ye eklemedik çünkü kaynakta net değildi. Doğruysa kendin ekle.",
+    "summary": "Yapılan düzenlemeler"
   },
   "applications": {
     "title": "Başvurularım",
@@ -166,7 +171,8 @@
     "assistReasonBrowserClosed": "Başvuru için açılan tarayıcı penceresi kapanmış. \"Bitir\"e basıp asistanlı başvuruyu yeniden başlatın.",
     "assistFilledCount": "{count} alan dolduruldu",
     "assistReviewNote": "Alanları gerçek tarayıcıda gözden geçirip GÖNDER'e kendiniz basın. Sonraki adım varsa yine \"Formu doldur\".",
-    "assistFinish": "Bitir"
+    "assistFinish": "Bitir",
+    "verification": "Doğrulaman gerekenler"
   },
   "errors": {
     "SCANNED_PDF": "Bu PDF taranmış görünüyor. Lütfen metin tabanlı bir PDF yükleyin.",

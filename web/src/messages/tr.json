@@ -88,7 +88,10 @@
     "language": "Dönüştürme dili",
     "convert": "ATS'ye Çevir",
     "converting": "Dönüştürülüyor…",
-    "done": "Dönüştürüldü! PDF indirildi ve ATS kopyası panelinize kaydedildi."
+    "done": "Dönüştürüldü! PDF indirildi ve ATS kopyası panelinize kaydedildi.",
+    "verification": "Doğrulaman gerekenler",
+    "verificationIntro": "Bu bilgileri CV'ye eklemedik çünkü kaynakta net değildi. Doğruysa kendin ekle.",
+    "summary": "Yapılan düzenlemeler"
   },
   "applications": {
     "title": "Başvurularım",

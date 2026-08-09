@@ -88,7 +88,10 @@
     "language": "Conversion language",
     "convert": "Convert to ATS",
     "converting": "Converting…",
-    "done": "Converted! The PDF was downloaded and the ATS copy was saved to your dashboard."
+    "done": "Converted! The PDF was downloaded and the ATS copy was saved to your dashboard.",
+    "verification": "Worth confirming",
+    "verificationIntro": "We left these out because the source CV was not clear. Add them yourself if they are right.",
+    "summary": "What we changed"
   },
   "applications": {
     "title": "My applications",

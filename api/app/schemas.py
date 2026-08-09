@@ -1,4 +1,4 @@
-from pydantic import AliasChoices, BaseModel, Field
+from pydantic import AliasChoices, BaseModel, Field, field_validator
 
 
 def stars_from_percent(percent: int) -> int:
@@ -8,15 +8,41 @@ def stars_from_percent(percent: int) -> int:
 class Experience(BaseModel):
     title: str
     company: str
+    location: str | None = None
     start_date: str | None = None
     end_date: str | None = None
+    # Legacy free-text form. Rows written before the ATS engine have this set and
+    # `bullets` empty; the renderer falls back to it. The rewrite fills `bullets`.
     description: str | None = None
+    bullets: list[str] = []
 
 
 class Education(BaseModel):
     degree: str | None = None
     school: str
+    location: str | None = None
+    start_date: str | None = None
     year: str | None = None
+    # GPA, honours, scholarship, thesis — whichever the source CV actually has.
+    # A flat list rather than a field per concept, so no empty field invites
+    # filling in something the source never said.
+    details: list[str] = []
+
+
+class Project(BaseModel):
+    name: str
+    # academic | personal | freelance | professional. Its own field because the
+    # ATS rules forbid presenting an academic project as commercial client work,
+    # and a field is something a test can assert on.
+    kind: str | None = None
+    technologies: list[str] = []
+    bullets: list[str] = []
+
+
+class Certification(BaseModel):
+    name: str
+    issuer: str | None = None
+    date: str | None = None
 
 
 class SkillGroup(BaseModel):
@@ -43,8 +69,20 @@ class CVData(BaseModel):
     # Filled by the ATS rewrite: skills organized under profession-specific
     # category names (e.g. "Programming Languages"). Empty for raw parses.
     skill_groups: list[SkillGroup] = []
+    projects: list[Project] = []
+    achievements: list[str] = []
     languages: list[str] = []
-    certifications: list[str] = []
+    certifications: list[Certification] = []
+
+    @field_validator("certifications", mode="before")
+    @classmethod
+    def _coerce_certifications(cls, value):
+        # Rows written before the ATS engine store certifications as plain
+        # strings. Coercing here keeps every stored CV loadable without a
+        # migration, and without a second field holding the same fact.
+        if isinstance(value, list):
+            return [{"name": v} if isinstance(v, str) else v for v in value]
+        return value
 
 
 class JobCriteria(BaseModel):

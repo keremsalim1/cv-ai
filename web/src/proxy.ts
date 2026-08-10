@@ -1,6 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
-import { isProtectedPath } from '@/lib/protected'
+import { isGuestOnlyPath, isProtectedPath } from '@/lib/protected'
 
 // Next 16 file convention: proxy.ts replaces the deprecated middleware.ts.
 export async function proxy(request: NextRequest) {
@@ -26,6 +26,12 @@ export async function proxy(request: NextRequest) {
   if (!user && isProtectedPath(request.nextUrl.pathname)) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
+    return NextResponse.redirect(url)
+  }
+
+  if (user && isGuestOnlyPath(request.nextUrl.pathname)) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/dashboard'
     return NextResponse.redirect(url)
   }
 
